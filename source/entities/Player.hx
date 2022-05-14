@@ -11,11 +11,15 @@ import scenes.*;
 
 class Player extends Entity
 {
-    public static inline var SPEED = 100;
+    public static inline var RUN_SPEED = 150;
+    public static inline var GRAVITY = 520;
+    public static inline var JUMP_POWER = 260;
+    public static inline var JUMP_CANCEL = 50;
 
     public var sprite(default, null):Spritemap;
     public var prevFacing(default, null):Bool;
     private var velocity:Vector2;
+    private var jumpDirectionBuffer:Alarm;
 
     public function new(x:Float, y:Float) {
         super(x, y);
@@ -25,9 +29,15 @@ class Player extends Entity
         sprite.x = -2;
         sprite.y = -8;
         sprite.add("idle", [0]);
+        sprite.add("run", [1, 2, 3, 2], 8);
+        sprite.add("jump", [4]);
+        sprite.add("fall", [5]);
+        sprite.add("crouch", [6]);
         sprite.play("idle");
         graphic = sprite;
         velocity = new Vector2();
+        jumpDirectionBuffer = new Alarm(0.1);
+        addTween(jumpDirectionBuffer);
     }
 
     override public function update() {
@@ -37,28 +47,41 @@ class Player extends Entity
     }
 
     private function movement() {
-        var heading = new Vector2();
-        if(Input.check("left")) {
-            heading.x = -1;
+        if(isOnGround() || jumpDirectionBuffer.active && velocity.x == 0) {
+            if(Input.check("left")) {
+                velocity.x = -RUN_SPEED;
+            }
+            else if(Input.check("right")) {
+                velocity.x = RUN_SPEED;
+            }
+            else {
+                velocity.x = 0;
+            }
         }
-        else if(Input.check("right")) {
-            heading.x = 1;
+
+        if(isOnGround()) {
+            velocity.y = 0;
+            if(Input.pressed("jump")) {
+                velocity.y = -JUMP_POWER;
+                jumpDirectionBuffer.start();
+            }
         }
         else {
-            heading.x = 0;
+            var gravity:Float = GRAVITY;
+            if(Math.abs(velocity.y) < JUMP_CANCEL) {
+                gravity *= 0.5;
+            }
+            velocity.y += gravity * HXP.elapsed;
+            if(Input.released("jump") && velocity.y < -JUMP_CANCEL) {
+                velocity.y = -JUMP_CANCEL;
+            }
         }
-        if(Input.check("up")) {
-            heading.y = -1;
-        }
-        else if(Input.check("down")) {
-            heading.y = 1;
-        }
-        else {
-            heading.y = 0;
-        }
-        velocity = heading;
-        velocity.normalize(SPEED);
+
         moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
+    }
+
+    private function isOnGround() {
+        return collide("walls", x, y + 1) != null;
     }
 
     private function animation() {
@@ -68,6 +91,23 @@ class Player extends Entity
         }
         else if(Input.check("right")) {
             sprite.flipX = false;
+        }
+
+        if(isOnGround()) {
+            if(velocity.x != 0) {
+                sprite.play("run");
+            }
+            else {
+                sprite.play("idle");
+            }
+        }
+        else {
+            if(velocity.y < JUMP_CANCEL) {
+                sprite.play("jump");
+            }
+            else {
+                sprite.play("fall");
+            }
         }
     }
 }
