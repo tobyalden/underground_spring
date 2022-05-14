@@ -12,6 +12,7 @@ import scenes.*;
 class Player extends Entity
 {
     public static inline var RUN_SPEED = 150;
+    public static inline var AIR_ACCEL = 300;
     public static inline var GRAVITY = 520;
     public static inline var JUMP_POWER = 260;
     public static inline var JUMP_CANCEL = 50;
@@ -58,6 +59,19 @@ class Player extends Entity
                 velocity.x = 0;
             }
         }
+        else {
+            if(Input.check("left")) {
+                velocity.x -= AIR_ACCEL * HXP.elapsed;
+            }
+            else if(Input.check("right")) {
+                velocity.x += AIR_ACCEL * HXP.elapsed;
+            }
+            else {
+                velocity.x = MathUtil.approach(velocity.x, 0, AIR_ACCEL * HXP.elapsed);
+            }
+        }
+
+        velocity.x = MathUtil.clamp(velocity.x, -RUN_SPEED, RUN_SPEED);
 
         if(isOnGround()) {
             velocity.y = 0;
