@@ -29,7 +29,7 @@ class Level extends Entity
         var xml = new haxe.xml.Access(Xml.parse(Assets.getText('levels/${levelName}.oel')));
 
         // Load walls
-        walls = new Grid(Std.parseInt(xml.node.level.att.width), Std.parseInt(xml.node.level.att.height), 10, 10);
+        walls = new Grid(Std.parseInt(xml.node.level.att.width), Std.parseInt(xml.node.level.att.height), 20, 20);
         walls.loadFromString(xml.node.level.node.walls.innerData, "", "\n");
 
         // Load entities

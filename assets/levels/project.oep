@@ -5,12 +5,12 @@
   <BackgroundColor A="255" R="125" G="160" B="255" />
   <GridColor A="255" R="255" G="240" B="90" />
   <LevelDefaultSize>
-    <Width>240</Width>
-    <Height>180</Height>
+    <Width>480</Width>
+    <Height>360</Height>
   </LevelDefaultSize>
   <LevelMinimumSize>
-    <Width>240</Width>
-    <Height>180</Height>
+    <Width>480</Width>
+    <Height>360</Height>
   </LevelMinimumSize>
   <LevelMaximumSize>
     <Width>2400</Width>
@@ -29,8 +29,8 @@
     <LayerDefinition xsi:type="GridLayerDefinition">
       <Name>walls</Name>
       <Grid>
-        <Width>10</Width>
-        <Height>10</Height>
+        <Width>20</Width>
+        <Height>20</Height>
       </Grid>
       <ScrollFactor>
         <X>1</X>
