@@ -13,11 +13,13 @@ class Player extends Entity
 {
     public static inline var SPEED = 100;
 
-    private var sprite:Spritemap;
+    public var sprite(default, null):Spritemap;
+    public var prevFacing(default, null):Bool;
     private var velocity:Vector2;
 
     public function new(x:Float, y:Float) {
         super(x, y);
+        name = "player";
         mask = new Hitbox(10, 10);
         sprite = new Spritemap("graphics/player.png", 10, 10);
         sprite.add("idle", [0]);
@@ -27,6 +29,12 @@ class Player extends Entity
     }
 
     override public function update() {
+        movement();
+        animation();
+        super.update();
+    }
+
+    private function movement() {
         var heading = new Vector2();
         if(Input.check("left")) {
             heading.x = -1;
@@ -49,6 +57,15 @@ class Player extends Entity
         velocity = heading;
         velocity.normalize(SPEED);
         moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
-        super.update();
+    }
+
+    private function animation() {
+        prevFacing = sprite.flipX;
+        if(Input.check("left")) {
+            sprite.flipX = true;
+        }
+        else if(Input.check("right")) {
+            sprite.flipX = false;
+        }
     }
 }
