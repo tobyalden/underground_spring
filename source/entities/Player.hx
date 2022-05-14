@@ -20,8 +20,10 @@ class Player extends Entity
     public function new(x:Float, y:Float) {
         super(x, y);
         name = "player";
-        mask = new Hitbox(10, 10);
-        sprite = new Spritemap("graphics/player.png", 10, 10);
+        mask = new Hitbox(12, 24);
+        sprite = new Spritemap("graphics/player.png", 16, 32);
+        sprite.x = -2;
+        sprite.y = -8;
         sprite.add("idle", [0]);
         sprite.play("idle");
         graphic = sprite;
