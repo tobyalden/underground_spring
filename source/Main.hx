@@ -16,8 +16,9 @@ class Main extends Engine
 
     override public function init() {
         HXP.screen.scaleMode = new UniformScaleMode(UniformScaleType.Expand);
+#if desktop
         HXP.fullscreen = true;
-
+#end
         Key.define("up", [Key.W, Key.UP]);
         Key.define("down", [Key.S, Key.DOWN]);
         Key.define("left", [Key.A, Key.LEFT, Key.LEFT_SQUARE_BRACKET]);

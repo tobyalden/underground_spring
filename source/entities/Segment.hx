@@ -7,16 +7,24 @@ import haxepunk.masks.*;
 import haxepunk.math.*;
 import openfl.Assets;
 
-class Level extends Entity
+class Segment extends Entity
 {
+    public static inline var TILE_SIZE = 20;
+    public static inline var MIN_WIDTH = 480;
+    public static inline var MIN_HEIGHT = 360;
+
+    public var entities(default, null):Array<Entity>;
     private var walls:Grid;
     private var tiles:Tilemap;
-    public var entities(default, null):Array<Entity>;
+    private var segmentX:Int;
+    private var segmentY:Int;
 
-    public function new(levelName:String) {
-        super(0, 0);
+    public function new(segmentX:Int, segmentY:Int, segmentName:String) {
+        super(segmentX * MIN_WIDTH, segmentY * MIN_HEIGHT);
+        this.segmentX = segmentX;
+        this.segmentY = segmentY;
         type = "walls";
-        loadLevel(levelName);
+        loadSegment(segmentName);
         updateGraphic();
         mask = walls;
     }
@@ -25,17 +33,28 @@ class Level extends Entity
         super.update();
     }
 
-    private function loadLevel(levelName:String) {
-        var xml = new haxe.xml.Access(Xml.parse(Assets.getText('levels/${levelName}.oel')));
+    private function loadSegment(segmentName:String) {
+        var xml = new haxe.xml.Access(Xml.parse(Assets.getText('segments/${segmentName}.oel')));
 
         // Load walls
-        walls = new Grid(Std.parseInt(xml.node.level.att.width), Std.parseInt(xml.node.level.att.height), 20, 20);
+        walls = new Grid(
+            Std.parseInt(xml.node.level.att.width),
+            Std.parseInt(xml.node.level.att.height),
+            TILE_SIZE,
+            TILE_SIZE
+        );
         walls.loadFromString(xml.node.level.node.walls.innerData, "", "\n");
 
         // Load entities
         entities = new Array<Entity>();
         for(player in xml.node.level.node.entities.nodes.player) {
             entities.push(new Player(Std.parseInt(player.att.x), Std.parseInt(player.att.y) + 6));
+        }
+
+        // Offset entities
+        for(entity in entities) {
+            entity.x += segmentX * MIN_WIDTH;
+            entity.y += segmentY * MIN_HEIGHT;
         }
     }
 
