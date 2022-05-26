@@ -51,10 +51,10 @@ class Player extends Entity
 
     private function movement() {
         if(isOnGround() || jumpDirectionBuffer.active && velocity.x == 0) {
-            if(Input.check("left")) {
+            if(Input.check("left") && !isOnLeftWall()) {
                 velocity.x -= RUN_ACCEL * HXP.elapsed;
             }
-            else if(Input.check("right")) {
+            else if(Input.check("right") && !isOnRightWall()) {
                 velocity.x += RUN_ACCEL * HXP.elapsed;
             }
             else {
@@ -62,10 +62,10 @@ class Player extends Entity
             }
         }
         else {
-            if(Input.check("left")) {
+            if(Input.check("left") && !isOnLeftWall()) {
                 velocity.x -= AIR_ACCEL * HXP.elapsed;
             }
-            else if(Input.check("right")) {
+            else if(Input.check("right") && !isOnRightWall()) {
                 velocity.x += AIR_ACCEL * HXP.elapsed;
             }
             else {
@@ -98,6 +98,11 @@ class Player extends Entity
         moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
     }
 
+    override public function moveCollideX(e:Entity) {
+        velocity.x = 0;
+        return true;
+    }
+
     override public function moveCollideY(e:Entity) {
         if(velocity.y < 0) {
             velocity.y = JUMP_CANCEL;
@@ -107,6 +112,14 @@ class Player extends Entity
 
     private function isOnGround() {
         return collide("walls", x, y + 1) != null;
+    }
+
+    private function isOnLeftWall() {
+        return collide("walls", x - 1, y) != null;
+    }
+
+    private function isOnRightWall() {
+        return collide("walls", x + 1, y) != null;
     }
 
     private function animation() {
