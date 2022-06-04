@@ -16,13 +16,9 @@ class Segment extends Entity
     public var entities(default, null):Array<Entity>;
     private var walls:Grid;
     private var tiles:Tilemap;
-    private var segmentX:Int;
-    private var segmentY:Int;
 
-    public function new(segmentX:Int, segmentY:Int, segmentName:String) {
-        super(segmentX * MIN_WIDTH, segmentY * MIN_HEIGHT);
-        this.segmentX = segmentX;
-        this.segmentY = segmentY;
+    public function new(segmentName:String) {
+        super(0, 0);
         type = "walls";
         loadSegment(segmentName);
         updateGraphic();
@@ -50,8 +46,15 @@ class Segment extends Entity
         for(player in xml.node.level.node.entities.nodes.player) {
             entities.push(new Player(Std.parseInt(player.att.x), Std.parseInt(player.att.y) + 6));
         }
+    }
 
-        // Offset entities
+    public function getWidthInMapTiles() {
+        return Std.int(walls.width / MIN_WIDTH);
+    }
+
+    public function offset(segmentX:Int, segmentY:Int) {
+        trace('offsetting to $segmentX, $segmentY');
+        moveTo(segmentX * MIN_WIDTH, segmentY * MIN_HEIGHT);
         for(entity in entities) {
             entity.x += segmentX * MIN_WIDTH;
             entity.y += segmentY * MIN_HEIGHT;

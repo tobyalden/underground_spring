@@ -12,9 +12,18 @@ import haxepunk.tweens.misc.*;
 import haxepunk.utils.*;
 import openfl.Assets;
 
-typedef SegmentCoordinates = {
+@:structInit class SegmentCoordinates {
     var segmentX:Int;
     var segmentY:Int;
+
+    public function toKey():String {
+        return '$segmentX-$segmentY';
+    }
+
+    static public function fromKey(key:String):SegmentCoordinates {
+        var parts = key.split('-');
+        return {segmentX: Std.parseInt(parts[0]), segmentY: Std.parseInt(parts[1])};
+    }
 }
 
 class GameScene extends Scene
@@ -27,8 +36,10 @@ class GameScene extends Scene
     private var lerpTimerX:Float;
     private var cameraStartX:Float;
     private var cameraTargetX:Float;
+    private var currentSegmentX:Int;
+    private var currentSegmentY:Int;
     private var currentSegment:Segment;
-    private var map:Map<SegmentCoordinates, String>;
+    private var map:Map<String, String>;
 
     override public function begin() {
         loadMap();
@@ -38,7 +49,7 @@ class GameScene extends Scene
     }
 
     public function loadMap() {
-        map = new Map<SegmentCoordinates, String>();
+        map = new Map<String, String>();
 
         // Load segments into map
         var xml = new haxe.xml.Access(Xml.parse(Assets.getText('maps/map.oel')));
@@ -49,28 +60,39 @@ class GameScene extends Scene
             var segmentHeight = Std.int(Std.parseInt(segment.att.height) / MAP_TILE_SIZE);
             for(widthX in 0...segmentWidth) {
                 for(widthY in 0...segmentHeight) {
-                    map[{segmentX: segmentX + widthX, segmentY: segmentY + widthY}] = segment.att.name;
+                    var coordinates:SegmentCoordinates = {segmentX: segmentX + widthX, segmentY: segmentY + widthY};
+                    map[coordinates.toKey()] = segment.att.name;
                 }
             }
 
             // Load start
             if(segment.att.name == "start") {
                 trace('loading start');
-                currentSegment = add(new Segment(segmentX, segmentY, "start"));
+                var start = new Segment("start");
+                start.offset(segmentX, segmentY);
+                currentSegment = add(start);
+                currentSegmentX = segmentX;
+                currentSegmentY = segmentY;
                 for(entity in currentSegment.entities) {
                     if(entity.name == "player") {
                         player = cast(entity, Player);
                     }
                     add(entity);
-                    trace("adding player");
                 }
             }
         }
+        trace('loaded map: $map');
     }
 
     override public function update() {
         if(player.centerX < currentSegment.x) {
-            //currentSegment.segmentX, currentSegment.segmentY
+            var coordinates:SegmentCoordinates = {segmentX: currentSegmentX - 1, segmentY: currentSegmentY};
+            if(map.exists(coordinates.toKey())) {
+                var segment = new Segment(map[coordinates.toKey()]);
+                segment.offset(currentSegmentX - segment.getWidthInMapTiles(), currentSegmentY);
+                remove(currentSegment);
+                currentSegment = add(segment);
+            }
         }
         super.update();
         updateCamera();
