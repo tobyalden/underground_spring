@@ -12,18 +12,24 @@ import haxepunk.tweens.misc.*;
 import haxepunk.utils.*;
 import openfl.Assets;
 
-@:structInit class SegmentCoordinates {
-    var segmentX:Int;
-    var segmentY:Int;
+@:structInit class MapCoordinates {
+    public var mapX:Int;
+    public var mapY:Int;
 
     public function toKey():String {
-        return '$segmentX-$segmentY';
+        return '$mapX-$mapY';
     }
 
-    static public function fromKey(key:String):SegmentCoordinates {
+    static public function fromKey(key:String):MapCoordinates {
         var parts = key.split('-');
-        return {segmentX: Std.parseInt(parts[0]), segmentY: Std.parseInt(parts[1])};
+        return {mapX: Std.parseInt(parts[0]), mapY: Std.parseInt(parts[1])};
     }
+}
+
+@:structInit class SegmentIdentifier {
+    public var id:Int;
+    public var name:String;
+    public var origin:MapCoordinates;
 }
 
 class GameScene extends Scene
@@ -36,10 +42,9 @@ class GameScene extends Scene
     private var lerpTimerX:Float;
     private var cameraStartX:Float;
     private var cameraTargetX:Float;
-    private var currentSegmentX:Int;
-    private var currentSegmentY:Int;
     private var currentSegment:Segment;
-    private var map:Map<String, String>;
+    private var currentCoordinates:MapCoordinates;
+    private var map:Map<String, SegmentIdentifier>;
 
     override public function begin() {
         loadMap();
@@ -49,30 +54,30 @@ class GameScene extends Scene
     }
 
     public function loadMap() {
-        map = new Map<String, String>();
+        map = new Map<String, SegmentIdentifier>();
 
         // Load segments into map
         var xml = new haxe.xml.Access(Xml.parse(Assets.getText('maps/map.oel')));
+        var id = 0;
         for(segment in xml.node.level.node.segments.nodes.segment) {
-            var segmentX = Std.int(Std.parseInt(segment.att.x) / MAP_TILE_SIZE);
-            var segmentY = Std.int(Std.parseInt(segment.att.y) / MAP_TILE_SIZE);
+            var mapX = Std.int(Std.parseInt(segment.att.x) / MAP_TILE_SIZE);
+            var mapY = Std.int(Std.parseInt(segment.att.y) / MAP_TILE_SIZE);
             var segmentWidth = Std.int(Std.parseInt(segment.att.width) / MAP_TILE_SIZE);
             var segmentHeight = Std.int(Std.parseInt(segment.att.height) / MAP_TILE_SIZE);
             for(widthX in 0...segmentWidth) {
                 for(widthY in 0...segmentHeight) {
-                    var coordinates:SegmentCoordinates = {segmentX: segmentX + widthX, segmentY: segmentY + widthY};
-                    map[coordinates.toKey()] = segment.att.name;
+                    var coordinates:MapCoordinates = {mapX: mapX + widthX, mapY: mapY + widthY};
+                    var identifier:SegmentIdentifier = {id: id, name: segment.att.name, origin: {mapX: mapX, mapY: mapY}};
+                    map[coordinates.toKey()] = identifier;
                 }
             }
 
             // Load start
             if(segment.att.name == "start") {
-                trace('loading start');
                 var start = new Segment("start");
-                start.offset(segmentX, segmentY);
+                start.offset(mapX, mapY);
                 currentSegment = add(start);
-                currentSegmentX = segmentX;
-                currentSegmentY = segmentY;
+                currentCoordinates = {mapX: mapX, mapY: mapY};
                 for(entity in currentSegment.entities) {
                     if(entity.name == "player") {
                         player = cast(entity, Player);
@@ -80,19 +85,39 @@ class GameScene extends Scene
                     add(entity);
                 }
             }
+
+            id++;
         }
-        trace('loaded map: $map');
+    }
+
+    public function loadSegment(coordinates:MapCoordinates) {
+        var identifier = map[coordinates.toKey()];
+        var segment = new Segment(identifier.name);
+        segment.offset(identifier.origin.mapX, identifier.origin.mapY);
+        remove(currentSegment);
+        currentSegment = add(segment);
+    }
+
+    public function isTransition(oldCoordinates:MapCoordinates, newCoordinates:MapCoordinates) {
+        if(oldCoordinates.toKey() == newCoordinates.toKey()) {
+            return false;
+        }
+        if(!map.exists(oldCoordinates.toKey()) || !map.exists(newCoordinates.toKey())) {
+            return false;
+        }
+        if(map[oldCoordinates.toKey()].id == map[newCoordinates.toKey()].id) {
+            return false;
+        }
+        return true;
     }
 
     override public function update() {
-        if(player.centerX < currentSegment.x) {
-            var coordinates:SegmentCoordinates = {segmentX: currentSegmentX - 1, segmentY: currentSegmentY};
-            if(map.exists(coordinates.toKey())) {
-                var segment = new Segment(map[coordinates.toKey()]);
-                segment.offset(currentSegmentX - segment.getWidthInMapTiles(), currentSegmentY);
-                remove(currentSegment);
-                currentSegment = add(segment);
-            }
+        var oldCoordinates:MapCoordinates = {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY};
+        currentCoordinates.mapX = Std.int(Math.floor(player.centerX / Segment.MIN_WIDTH));
+        currentCoordinates.mapY = Std.int(Math.floor(player.centerY / Segment.MIN_HEIGHT));
+        var newCoordinates:MapCoordinates = {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY};
+        if(isTransition(oldCoordinates, newCoordinates)) {
+            loadSegment(newCoordinates);
         }
         super.update();
         updateCamera();
