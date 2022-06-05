@@ -14,13 +14,16 @@ class Segment extends Entity
     public static inline var MIN_HEIGHT = 360;
 
     public var entities(default, null):Array<Entity>;
+    // TODO: this playerStart is kind of messy, can probably be replaced by something better (an entity, maybe)
+    public var playerStart(default, null):Vector2 = null;
     private var walls:Grid;
     private var tiles:Tilemap;
+    private var exits:Map<Int, Exit>;
 
-    public function new(segmentName:String) {
+    public function new(fileName:String) {
         super(0, 0);
         type = "walls";
-        loadSegment(segmentName);
+        loadFromFile(fileName);
         updateGraphic();
         mask = walls;
     }
@@ -29,8 +32,8 @@ class Segment extends Entity
         super.update();
     }
 
-    private function loadSegment(segmentName:String) {
-        var xml = new haxe.xml.Access(Xml.parse(Assets.getText('segments/${segmentName}.oel')));
+    private function loadFromFile(fileName:String) {
+        var xml = new haxe.xml.Access(Xml.parse(Assets.getText('segments/${fileName}.oel')));
 
         // Load walls
         walls = new Grid(
@@ -41,23 +44,37 @@ class Segment extends Entity
         );
         walls.loadFromString(xml.node.level.node.walls.innerData, "", "\n");
 
-        // Load entities
+        // Load entities & exits
         entities = new Array<Entity>();
+        exits = new Map<Int, Exit>();
         for(player in xml.node.level.node.entities.nodes.player) {
-            entities.push(new Player(Std.parseInt(player.att.x), Std.parseInt(player.att.y) + 6));
+            playerStart = new Vector2(Std.parseInt(player.att.x), Std.parseInt(player.att.y) + 6);
+        }
+        for(horizontalExit in xml.node.level.node.entities.nodes.horizontalExit) {
+            var exit = new Exit(Std.parseInt(horizontalExit.att.x), Std.parseInt(horizontalExit.att.y), true);
+            entities.push(exit);
+            exits[Std.parseInt(horizontalExit.att.id)] = exit;
+        }
+        for(verticalExit in xml.node.level.node.entities.nodes.verticalExit) {
+            var exit = new Exit(Std.parseInt(verticalExit.att.x), Std.parseInt(verticalExit.att.y), false);
+            entities.push(exit);
+            exits[Std.parseInt(verticalExit.att.id)] = exit;
         }
     }
 
-    public function getWidthInMapTiles() {
-        return Std.int(walls.width / MIN_WIDTH);
+    public function getExitById(exitId:Int) {
+        return exits[exitId];
     }
 
     public function offset(segmentX:Int, segmentY:Int) {
-        trace('offsetting to $segmentX, $segmentY');
         moveTo(segmentX * MIN_WIDTH, segmentY * MIN_HEIGHT);
         for(entity in entities) {
             entity.x += segmentX * MIN_WIDTH;
             entity.y += segmentY * MIN_HEIGHT;
+        }
+        if(playerStart != null) {
+            playerStart.x += segmentX * MIN_WIDTH;
+            playerStart.y += segmentY * MIN_HEIGHT;
         }
     }
 

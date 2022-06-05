@@ -30,6 +30,14 @@ import openfl.Assets;
     public var id:Int;
     public var name:String;
     public var origin:MapCoordinates;
+    public var exits:ExitIds;
+}
+
+@:structInit class ExitIds {
+    public var top:Int = -1;
+    public var bottom:Int = -1;
+    public var left:Int = -1;
+    public var right:Int = -1;
 }
 
 class GameScene extends Scene
@@ -67,7 +75,33 @@ class GameScene extends Scene
             for(widthX in 0...segmentWidth) {
                 for(widthY in 0...segmentHeight) {
                     var coordinates:MapCoordinates = {mapX: mapX + widthX, mapY: mapY + widthY};
-                    var identifier:SegmentIdentifier = {id: id, name: segment.att.name, origin: {mapX: mapX, mapY: mapY}};
+
+                    // Look up exit IDs
+                    var segmentXml = new haxe.xml.Access(Xml.parse(Assets.getText('segments/${segment.att.name}.oel')));
+                    var exits:ExitIds = {};
+                    for(horizontalExit in segmentXml.node.level.node.entities.nodes.horizontalExit) {
+                        if(Std.parseInt(horizontalExit.att.x) == 0) {
+                            exits.left = Std.parseInt(horizontalExit.att.id);
+                        }
+                        else {
+                            exits.right = Std.parseInt(horizontalExit.att.id);
+                        }
+                    }
+                    for(verticalExit in segmentXml.node.level.node.entities.nodes.verticalExit) {
+                        if(Std.parseInt(verticalExit.att.y) == 0) {
+                            exits.top = Std.parseInt(verticalExit.att.id);
+                        }
+                        else {
+                            exits.bottom = Std.parseInt(verticalExit.att.id);
+                        }
+                    }
+
+                    var identifier:SegmentIdentifier = {
+                        id: id,
+                        name: segment.att.name,
+                        origin: {mapX: mapX, mapY: mapY},
+                        exits: exits
+                    };
                     map[coordinates.toKey()] = identifier;
                 }
             }
@@ -76,14 +110,12 @@ class GameScene extends Scene
             if(segment.att.name == "start") {
                 var start = new Segment("start");
                 start.offset(mapX, mapY);
-                currentSegment = add(start);
-                currentCoordinates = {mapX: mapX, mapY: mapY};
-                for(entity in currentSegment.entities) {
-                    if(entity.name == "player") {
-                        player = cast(entity, Player);
-                    }
+                for(entity in start.entities) {
                     add(entity);
                 }
+                player = add(new Player(start.playerStart.x, start.playerStart.y));
+                currentSegment = add(start);
+                currentCoordinates = {mapX: mapX, mapY: mapY};
             }
 
             id++;
@@ -94,18 +126,24 @@ class GameScene extends Scene
         var identifier = map[coordinates.toKey()];
         var segment = new Segment(identifier.name);
         segment.offset(identifier.origin.mapX, identifier.origin.mapY);
+        for(entity in currentSegment.entities) {
+            remove(entity);
+        }
         remove(currentSegment);
         currentSegment = add(segment);
+        for(entity in currentSegment.entities) {
+            add(entity);
+        }
     }
 
-    public function isTransition(oldCoordinates:MapCoordinates, newCoordinates:MapCoordinates) {
-        if(oldCoordinates.toKey() == newCoordinates.toKey()) {
+    public function isTransition(oldCoordinates:MapCoordinates) {
+        if(oldCoordinates.toKey() == currentCoordinates.toKey()) {
             return false;
         }
-        if(!map.exists(oldCoordinates.toKey()) || !map.exists(newCoordinates.toKey())) {
+        if(!map.exists(oldCoordinates.toKey()) || !map.exists(currentCoordinates.toKey())) {
             return false;
         }
-        if(map[oldCoordinates.toKey()].id == map[newCoordinates.toKey()].id) {
+        if(map[oldCoordinates.toKey()].id == map[currentCoordinates.toKey()].id) {
             return false;
         }
         return true;
@@ -118,11 +156,30 @@ class GameScene extends Scene
         };
     }
 
+    private function getSegmentExit(oldCoordinates:MapCoordinates) {
+        var exitId = -1;
+        if(oldCoordinates.mapX > currentCoordinates.mapX) {
+            exitId = map[currentCoordinates.toKey()].exits.right;
+        }
+        else if(oldCoordinates.mapX < currentCoordinates.mapX) {
+            exitId = map[currentCoordinates.toKey()].exits.left;
+        }
+        else if(oldCoordinates.mapY > currentCoordinates.mapY) {
+            exitId = map[currentCoordinates.toKey()].exits.bottom;
+        }
+        else if(oldCoordinates.mapY < currentCoordinates.mapY) {
+            exitId = map[currentCoordinates.toKey()].exits.top;
+        }
+        return currentSegment.getExitById(exitId);
+    }
+
     override public function update() {
         var oldCoordinates:MapCoordinates = {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY};
         currentCoordinates = getCurrentCoordinates();
-        if(isTransition(oldCoordinates, currentCoordinates)) {
+        if(isTransition(oldCoordinates)) {
             loadSegment(currentCoordinates);
+            var exit = getSegmentExit(oldCoordinates);
+            player.moveTo(exit.centerX - player.width / 2, exit.centerY - player.height / 2);
         }
         super.update();
         updateCamera();
