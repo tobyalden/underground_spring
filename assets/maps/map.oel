@@ -1,6 +1,6 @@
-<level width="100" height="100">
+<level width="640" height="480">
   <segments>
-    <segment id="0" x="20" y="10" width="10" height="10" name="start" />
-    <segment id="1" x="10" y="10" width="10" height="10" name="left" />
+    <segment id="0" x="20" y="10" width="20" height="10" name="start" />
+    <segment id="1" x="10" y="10" width="10" height="20" name="left" />
   </segments>
 </level>

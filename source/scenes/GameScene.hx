@@ -111,13 +111,18 @@ class GameScene extends Scene
         return true;
     }
 
+    private function getCurrentCoordinates():MapCoordinates {
+        return {
+            mapX: Std.int(Math.floor(player.centerX / Segment.MIN_WIDTH)),
+            mapY: Std.int(Math.floor(player.centerY / Segment.MIN_HEIGHT))
+        };
+    }
+
     override public function update() {
         var oldCoordinates:MapCoordinates = {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY};
-        currentCoordinates.mapX = Std.int(Math.floor(player.centerX / Segment.MIN_WIDTH));
-        currentCoordinates.mapY = Std.int(Math.floor(player.centerY / Segment.MIN_HEIGHT));
-        var newCoordinates:MapCoordinates = {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY};
-        if(isTransition(oldCoordinates, newCoordinates)) {
-            loadSegment(newCoordinates);
+        currentCoordinates = getCurrentCoordinates();
+        if(isTransition(oldCoordinates, currentCoordinates)) {
+            loadSegment(currentCoordinates);
         }
         super.update();
         updateCamera();
