@@ -200,6 +200,8 @@ class GameScene extends Scene
         );
         var cameraTargetY = player.centerY - HXP.height / 2;
         camera.y = getCameraTarget().y;
+        camera.x = MathUtil.clamp(camera.x, currentSegment.x, currentSegment.x + currentSegment.width - Segment.MIN_WIDTH);
+        camera.y = MathUtil.clamp(camera.y, currentSegment.y, currentSegment.y + currentSegment.height - Segment.MIN_HEIGHT);
     }
 
     private function getCameraTarget() {
