@@ -1,0 +1,14 @@
+- map gen
+    - generic hallway / shaft constructors
+    - map constructor (josiah?)
+
+- gameplay
+    - attack
+    - enemies
+    - health
+    - death/respawn
+    - boss
+    - hazards / environment objects (ladders, etc.)
+
+- graphics (sam)
+- audio

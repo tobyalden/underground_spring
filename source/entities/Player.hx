@@ -19,6 +19,9 @@ class Player extends Entity
     public static inline var JUMP_CANCEL = 50;
     public static inline var MAX_FALL_SPEED = 400;
 
+    public static inline var SHOT_SPEED = 300;
+    public static inline var SHOT_KNOCKBACK = 100;
+
     public var sprite(default, null):Spritemap;
     public var prevFacing(default, null):Bool;
     private var velocity:Vector2;
@@ -44,6 +47,7 @@ class Player extends Entity
     }
 
     override public function update() {
+        combat();
         movement();
         animation();
         super.update();
@@ -96,6 +100,26 @@ class Player extends Entity
         velocity.y = Math.min(velocity.y, MAX_FALL_SPEED);
 
         moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
+    }
+
+    private function combat() {
+        if(Input.pressed("shoot")) {
+            var bulletVelocity = new Vector2(sprite.flipX ? -1 : 1, 0);
+            bulletVelocity.normalize(SHOT_SPEED);
+            var bullet = new Bullet(
+                centerX, centerY,
+                {
+                    width: 8,
+                    height: 4,
+                    angle: sprite.flipX ? -Math.PI / 2: Math.PI / 2,
+                    speed: 800,
+                    shotByPlayer: true,
+                    collidesWithWalls: true
+                }
+            );
+            HXP.scene.add(bullet);
+            velocity.x += SHOT_KNOCKBACK * (sprite.flipX ? 1 : -1);
+        }
     }
 
     override public function moveCollideX(e:Entity) {
