@@ -73,14 +73,23 @@ class GameScene extends Scene
             var segmentWidth = Std.int(Std.parseInt(segment.att.width) / MAP_TILE_SIZE);
             var segmentHeight = Std.int(Std.parseInt(segment.att.height) / MAP_TILE_SIZE);
             for(widthX in 0...segmentWidth) {
-                for(widthY in 0...segmentHeight) {
-                    var coordinates:MapCoordinates = {mapX: mapX + widthX, mapY: mapY + widthY};
+                for(heightY in 0...segmentHeight) {
+                    var coordinates:MapCoordinates = {mapX: mapX + widthX, mapY: mapY + heightY};
 
                     // Look up exit IDs
                     var segmentXml = new haxe.xml.Access(Xml.parse(Assets.getText('segments/${segment.att.name}.oel')));
                     var exits:ExitIds = {};
                     for(horizontalExit in segmentXml.node.level.node.entities.nodes.horizontalExit) {
-                        if(Std.parseInt(horizontalExit.att.x) == 0) {
+                        var exitPosition = new Vector2(Std.parseInt(horizontalExit.att.x), Std.parseInt(horizontalExit.att.y));
+                        if(
+                            exitPosition.x < widthX * Segment.MIN_WIDTH
+                            || exitPosition.x > (widthX + 1) * Segment.MIN_WIDTH
+                            || exitPosition.y < heightY * Segment.MIN_HEIGHT
+                            || exitPosition.y > (heightY + 1) * Segment.MIN_HEIGHT
+                        ) {
+                            continue;
+                        }
+                        if(exitPosition.x == 0) {
                             exits.left = Std.parseInt(horizontalExit.att.id);
                         }
                         else {
@@ -88,6 +97,15 @@ class GameScene extends Scene
                         }
                     }
                     for(verticalExit in segmentXml.node.level.node.entities.nodes.verticalExit) {
+                        var exitPosition = new Vector2(Std.parseInt(verticalExit.att.x), Std.parseInt(verticalExit.att.y));
+                        if(
+                            exitPosition.x < widthX * Segment.MIN_WIDTH
+                            || exitPosition.x > (widthX + 1) * Segment.MIN_WIDTH
+                            || exitPosition.y < heightY * Segment.MIN_HEIGHT
+                            || exitPosition.y > (heightY + 1) * Segment.MIN_HEIGHT
+                        ) {
+                            continue;
+                        }
                         if(Std.parseInt(verticalExit.att.y) == 0) {
                             exits.top = Std.parseInt(verticalExit.att.id);
                         }
