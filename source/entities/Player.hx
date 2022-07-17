@@ -18,14 +18,18 @@ class Player extends Entity
     public static inline var JUMP_POWER = 260;
     public static inline var JUMP_CANCEL = 50;
     public static inline var MAX_FALL_SPEED = 400;
+    public static inline var JUMP_DIRECTION_BUFFER = 0.3;
 
-    public static inline var SHOT_SPEED = 300;
-    public static inline var SHOT_KNOCKBACK = 100;
+    public static inline var SHOT_COOLDOWN = 0.25;
+    public static inline var SHOT_BUFFER = 5;
 
     public var sprite(default, null):Spritemap;
     public var prevFacing(default, null):Bool;
     private var velocity:Vector2;
     private var jumpDirectionBuffer:Alarm;
+
+    private var shotCooldown:Alarm;
+    private var inputBuffer:Map<String, Array<Bool>>;
 
     public function new(x:Float, y:Float) {
         super(x, y);
@@ -42,8 +46,14 @@ class Player extends Entity
         sprite.play("idle");
         graphic = sprite;
         velocity = new Vector2();
-        jumpDirectionBuffer = new Alarm(0.1);
+        jumpDirectionBuffer = new Alarm(JUMP_DIRECTION_BUFFER);
         addTween(jumpDirectionBuffer);
+        shotCooldown = new Alarm(SHOT_COOLDOWN);
+        addTween(shotCooldown);
+        inputBuffer = [
+            "jump" => [for (i in 0...10) false],
+            "shoot" => [for (i in 0...10) false],
+        ];
     }
 
     override public function update() {
@@ -51,6 +61,10 @@ class Player extends Entity
         movement();
         animation();
         super.update();
+        for(input in ["jump", "shoot"]) {
+            inputBuffer[input].insert(0, Input.pressed(input));
+            inputBuffer[input].pop();
+        }
     }
 
     private function movement() {
@@ -102,23 +116,33 @@ class Player extends Entity
         moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
     }
 
+    private function inputPressedBuffer(input:String, frames:Int) {
+        if(Input.pressed(input)) {
+            return true;
+        }
+        for(i in 0...frames) {
+            if(inputBuffer[input][i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private function combat() {
-        if(Input.pressed("shoot")) {
-            var bulletVelocity = new Vector2(sprite.flipX ? -1 : 1, 0);
-            bulletVelocity.normalize(SHOT_SPEED);
+        if(inputPressedBuffer("shoot", SHOT_BUFFER) && !shotCooldown.active) {
             var bullet = new Bullet(
                 centerX, centerY,
                 {
-                    width: 8,
-                    height: 4,
+                    width: 16,
+                    height: 8,
                     angle: sprite.flipX ? -Math.PI / 2: Math.PI / 2,
-                    speed: 800,
+                    speed: 500,
                     shotByPlayer: true,
                     collidesWithWalls: true
                 }
             );
             HXP.scene.add(bullet);
-            velocity.x += SHOT_KNOCKBACK * (sprite.flipX ? 1 : -1);
+            shotCooldown.start();
         }
     }
 
