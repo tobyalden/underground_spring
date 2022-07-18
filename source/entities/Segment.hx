@@ -60,6 +60,10 @@ class Segment extends Entity
             entities.push(exit);
             exits[Std.parseInt(verticalExit.att.id)] = exit;
         }
+        for(vine in xml.node.level.node.entities.nodes.vine) {
+            var vine = new Vine(Std.parseInt(vine.att.x) + 4, Std.parseInt(vine.att.y), Std.parseInt(vine.att.height));
+            entities.push(vine);
+        }
     }
 
     public function getExitById(exitId:Int) {

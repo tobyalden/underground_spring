@@ -16,7 +16,7 @@
     <Width>2400</Width>
     <Height>1800</Height>
   </LevelMaximumSize>
-  <Filename>C:\Users\Underhill\Desktop\GameDev\underground_spring\assets\segments\segment_project.oep</Filename>
+  <Filename>C:\Users\Dell\Desktop\Coding\underground_spring\assets\segments\segment_project.oep</Filename>
   <AngleMode>Radians</AngleMode>
   <CameraEnabled>false</CameraEnabled>
   <CameraSize>
@@ -94,6 +94,21 @@
       </Origin>
       <ImageDefinition DrawMode="Rectangle" ImagePath="" Tiled="false">
         <RectColor A="255" R="255" G="255" B="0" />
+      </ImageDefinition>
+      <ValueDefinitions />
+      <NodesDefinition Enabled="false" Limit="-1" DrawMode="None" Ghost="false" />
+    </EntityDefinition>
+    <EntityDefinition Name="vine" Limit="-1" ResizableX="false" ResizableY="true" Rotatable="false" RotateIncrement="15">
+      <Size>
+        <Width>10</Width>
+        <Height>10</Height>
+      </Size>
+      <Origin>
+        <X>0</X>
+        <Y>0</Y>
+      </Origin>
+      <ImageDefinition DrawMode="Image" ImagePath="..\graphics\vine.png" Tiled="true">
+        <RectColor A="255" R="255" G="0" B="0" />
       </ImageDefinition>
       <ValueDefinitions />
       <NodesDefinition Enabled="false" Limit="-1" DrawMode="None" Ghost="false" />

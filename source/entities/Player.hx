@@ -20,6 +20,10 @@ class Player extends Entity
     public static inline var MAX_FALL_SPEED = 400;
     public static inline var JUMP_DIRECTION_BUFFER = 0.3;
 
+    public static inline var CLIMB_UP_SPEED = 80;
+    public static inline var CLIMB_DOWN_SPEED = CLIMB_UP_SPEED * 1.5;
+    public static inline var CLIMB_COOLDOWN = 0.25;
+
     public static inline var SHOT_COOLDOWN = 0.25;
     public static inline var SHOT_BUFFER = 5;
 
@@ -27,6 +31,9 @@ class Player extends Entity
     public var prevFacing(default, null):Bool;
     private var velocity:Vector2;
     private var jumpDirectionBuffer:Alarm;
+
+    private var isClimbing:Bool;
+    private var climbCooldown:Alarm;
 
     private var shotCooldown:Alarm;
     private var inputBuffer:Map<String, Array<Bool>>;
@@ -43,11 +50,14 @@ class Player extends Entity
         sprite.add("jump", [4]);
         sprite.add("fall", [5]);
         sprite.add("crouch", [6]);
+        sprite.add("climb", [7]);
         sprite.play("idle");
         graphic = sprite;
         velocity = new Vector2();
         jumpDirectionBuffer = new Alarm(JUMP_DIRECTION_BUFFER);
         addTween(jumpDirectionBuffer);
+        climbCooldown = new Alarm(CLIMB_COOLDOWN);
+        addTween(climbCooldown);
         shotCooldown = new Alarm(SHOT_COOLDOWN);
         addTween(shotCooldown);
         inputBuffer = [
@@ -57,8 +67,23 @@ class Player extends Entity
     }
 
     override public function update() {
+        var vine = collide("vine", x, y);
+        if(vine != null && Input.check("up") && !climbCooldown.active) {
+            x = vine.centerX - width / 2;
+            isClimbing = true;
+        }
+        if(isClimbing) {
+            climb();
+        }
+        if(!isClimbing) {
+            movement();
+        }
+        moveBy(
+            velocity.x * HXP.elapsed,
+            velocity.y * HXP.elapsed,
+            ["walls"]
+        );
         combat();
-        movement();
         animation();
         super.update();
         for(input in ["jump", "shoot"]) {
@@ -66,6 +91,28 @@ class Player extends Entity
             inputBuffer[input].pop();
         }
     }
+
+    private function climb() {
+        velocity.x = 0;
+        if(Input.check("up")) {
+            velocity.y = -CLIMB_UP_SPEED;
+        }
+        else if(Input.check("down")) {
+            velocity.y = CLIMB_DOWN_SPEED;
+        }
+        else {
+            velocity.y = 0;
+        }
+
+        if(Input.pressed("jump")) {
+            isClimbing = false;
+            if(!Input.check("down")) {
+                velocity.y = -JUMP_POWER;
+            }
+            climbCooldown.start();
+        }
+    }
+
 
     private function movement() {
         if(isOnGround() || jumpDirectionBuffer.active && velocity.x == 0) {
@@ -113,7 +160,6 @@ class Player extends Entity
 
         velocity.y = Math.min(velocity.y, MAX_FALL_SPEED);
 
-        moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
     }
 
     private function inputPressedBuffer(input:String, frames:Int) {
@@ -179,7 +225,10 @@ class Player extends Entity
             sprite.flipX = false;
         }
 
-        if(isOnGround()) {
+        if(isClimbing) {
+            sprite.play("climb");
+        }
+        else if(isOnGround()) {
             if(velocity.x != 0) {
                 sprite.play("run");
             }
