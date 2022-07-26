@@ -17,13 +17,14 @@ class Main extends Engine
     override public function init() {
         HXP.screen.scaleMode = new UniformScaleMode(UniformScaleType.Expand);
 #if desktop
-        HXP.fullscreen = true;
+        //HXP.fullscreen = true;
 #end
         Key.define("up", [Key.W, Key.UP]);
         Key.define("down", [Key.S, Key.DOWN]);
         Key.define("left", [Key.A, Key.LEFT, Key.LEFT_SQUARE_BRACKET]);
         Key.define("right", [Key.D, Key.RIGHT, Key.RIGHT_SQUARE_BRACKET]);
         Key.define("jump", [Key.Z]);
+        Key.define("fly", [Key.C]);
         Key.define("shoot", [Key.X]);
 
         if(Gamepad.gamepad(0) != null) {

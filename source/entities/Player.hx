@@ -11,7 +11,7 @@ import scenes.*;
 
 class Player extends Entity
 {
-    public static inline var RUN_SPEED = 150;
+    public static inline var MAX_RUN_SPEED = 150;
     public static inline var RUN_ACCEL = 500;
     public static inline var AIR_ACCEL = 300;
     public static inline var GRAVITY = 520;
@@ -24,6 +24,9 @@ class Player extends Entity
     public static inline var CLIMB_DOWN_SPEED = CLIMB_UP_SPEED * 1.5;
     public static inline var CLIMB_COOLDOWN = 0.25;
 
+    public static inline var FLIGHT_ACCEL = 1000;
+    public static inline var MAX_FLIGHT_SPEED = 250;
+
     public static inline var SHOT_COOLDOWN = 0.25;
     public static inline var SHOT_BUFFER = 5;
 
@@ -34,6 +37,8 @@ class Player extends Entity
 
     private var isClimbing:Bool;
     private var climbCooldown:Alarm;
+
+    private var isFlying:Bool;
 
     private var shotCooldown:Alarm;
     private var inputBuffer:Map<String, Array<Bool>>;
@@ -58,6 +63,7 @@ class Player extends Entity
         addTween(jumpDirectionBuffer);
         climbCooldown = new Alarm(CLIMB_COOLDOWN);
         addTween(climbCooldown);
+        isFlying = false;
         shotCooldown = new Alarm(SHOT_COOLDOWN);
         addTween(shotCooldown);
         inputBuffer = [
@@ -67,16 +73,22 @@ class Player extends Entity
     }
 
     override public function update() {
-        var vine = collide("vine", x, y);
-        if(vine != null && Input.check("up") && !climbCooldown.active) {
-            x = vine.centerX - width / 2;
-            isClimbing = true;
-        }
+        //var vine = collide("vine", x, y);
+        //if(vine != null && Input.check("up") && !climbCooldown.active) {
+            //x = vine.centerX - width / 2;
+            //isClimbing = true;
+        //}
+        isFlying = Input.check("fly");
         if(isClimbing) {
             climb();
         }
         if(!isClimbing) {
-            movement();
+            if(isFlying) {
+                flightMovement();
+            }
+            else {
+                movement();
+            }
         }
         moveBy(
             velocity.x * HXP.elapsed,
@@ -113,6 +125,29 @@ class Player extends Entity
         }
     }
 
+    private function flightMovement() {
+        if(Input.check("left")) {
+            velocity.x -= FLIGHT_ACCEL * HXP.elapsed;
+        }
+        else if(Input.check("right")) {
+            velocity.x += FLIGHT_ACCEL * HXP.elapsed;
+        }
+        else {
+            velocity.x = MathUtil.approach(velocity.x, 0, HXP.elapsed * FLIGHT_ACCEL);
+        }
+        if(Input.check("up")) {
+            velocity.y -= FLIGHT_ACCEL * HXP.elapsed;
+        }
+        else if(Input.check("down")) {
+            velocity.y += FLIGHT_ACCEL * HXP.elapsed;
+        }
+        else {
+            velocity.y = MathUtil.approach(velocity.y, 0, HXP.elapsed * FLIGHT_ACCEL);
+        }
+        if(velocity.length > MAX_FLIGHT_SPEED) {
+            velocity.normalize(MAX_FLIGHT_SPEED);
+        }
+    }
 
     private function movement() {
         if(isOnGround() || jumpDirectionBuffer.active && velocity.x == 0) {
@@ -138,7 +173,15 @@ class Player extends Entity
             }
         }
 
-        velocity.x = MathUtil.clamp(velocity.x, -RUN_SPEED, RUN_SPEED);
+        velocity.x = MathUtil.clamp(velocity.x, -MAX_FLIGHT_SPEED, MAX_FLIGHT_SPEED);
+        var decel = isOnGround() ? RUN_ACCEL * 2 : AIR_ACCEL;
+        if(Math.abs(velocity.x) > MAX_RUN_SPEED) {
+            velocity.x = MathUtil.approach(
+                velocity.x,
+                MAX_RUN_SPEED * MathUtil.sign(velocity.x),
+                decel * HXP.elapsed
+            );
+        }
 
         if(isOnGround()) {
             velocity.y = 0;
