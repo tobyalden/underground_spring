@@ -41,7 +41,6 @@ class Player extends Entity
     private var isFlying:Bool;
 
     private var shotCooldown:Alarm;
-    private var inputBuffer:Map<String, Array<Bool>>;
 
     public function new(x:Float, y:Float) {
         super(x, y);
@@ -66,10 +65,6 @@ class Player extends Entity
         isFlying = false;
         shotCooldown = new Alarm(SHOT_COOLDOWN);
         addTween(shotCooldown);
-        inputBuffer = [
-            "jump" => [for (i in 0...10) false],
-            "shoot" => [for (i in 0...10) false],
-        ];
     }
 
     override public function update() {
@@ -98,10 +93,6 @@ class Player extends Entity
         combat();
         animation();
         super.update();
-        for(input in ["jump", "shoot"]) {
-            inputBuffer[input].insert(0, Input.pressed(input));
-            inputBuffer[input].pop();
-        }
     }
 
     private function climb() {
@@ -205,20 +196,8 @@ class Player extends Entity
 
     }
 
-    private function inputPressedBuffer(input:String, frames:Int) {
-        if(Input.pressed(input)) {
-            return true;
-        }
-        for(i in 0...frames) {
-            if(inputBuffer[input][i]) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private function combat() {
-        if(inputPressedBuffer("shoot", SHOT_BUFFER) && !shotCooldown.active) {
+        if(Main.inputPressedBuffer("shoot", SHOT_BUFFER) && !shotCooldown.active) {
             var bullet = new Bullet(
                 centerX, centerY,
                 {
