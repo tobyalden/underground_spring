@@ -53,9 +53,11 @@ class GameScene extends Scene
     private var currentSegment:Segment;
     private var currentCoordinates:MapCoordinates;
     private var map:Map<String, SegmentIdentifier>;
+    private var ui:UI;
 
     override public function begin() {
         loadMap();
+        ui = add(new UI());
         lerpTimerX = 0;
         cameraStartX = getCameraTarget().x;
         cameraTargetX = getCameraTarget().x;

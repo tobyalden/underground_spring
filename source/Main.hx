@@ -20,6 +20,7 @@ class Main extends Engine
         HXP.screen.scaleMode = new UniformScaleMode(UniformScaleType.Expand);
 #if desktop
         //HXP.fullscreen = true;
+        Lib.application.window.resize(HXP.width * 2, HXP.height * 2);
 #end
         Key.define("up", [Key.W, Key.UP]);
         Key.define("down", [Key.S, Key.DOWN]);

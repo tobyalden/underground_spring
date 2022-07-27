@@ -32,6 +32,8 @@ class Player extends Entity
 
     public var sprite(default, null):Spritemap;
     public var prevFacing(default, null):Bool;
+    public var health(default, null):Int;
+
     private var velocity:Vector2;
     private var jumpDirectionBuffer:Alarm;
 
@@ -65,15 +67,25 @@ class Player extends Entity
         isFlying = false;
         shotCooldown = new Alarm(SHOT_COOLDOWN);
         addTween(shotCooldown);
+        health = 3;
     }
 
     override public function update() {
-        //var vine = collide("vine", x, y);
-        //if(vine != null && Input.check("up") && !climbCooldown.active) {
-            //x = vine.centerX - width / 2;
-            //isClimbing = true;
-        //}
-        isFlying = Input.check("fly");
+        isFlying = Input.check("fly") && !isClimbing;
+
+        var vine = collide("vine", x, y);
+        if(isClimbing) {
+            if(vine == null) {
+                isClimbing = false;
+            }
+        }
+        else {
+            if(vine != null && Input.check("up") && !climbCooldown.active && !isFlying) {
+                x = vine.centerX - width / 2;
+                isClimbing = true;
+            }
+        }
+
         if(isClimbing) {
             climb();
         }
@@ -220,7 +232,7 @@ class Player extends Entity
     }
 
     override public function moveCollideY(e:Entity) {
-        if(velocity.y < 0) {
+        if(velocity.y < 0 && !isFlying) {
             velocity.y = JUMP_CANCEL;
         }
         return true;
