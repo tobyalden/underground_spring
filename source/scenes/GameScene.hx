@@ -45,6 +45,7 @@ class GameScene extends Scene
     public static inline var CAMERA_BUFFER_X = 50;
     public static inline var CAMERA_SPEED = 1.5;
     public static inline var MAP_TILE_SIZE = 10;
+    public static inline var DEBUG_MOVE_SPEED = 300;
 
     private var player:Player;
     private var lerpTimerX:Float;
@@ -160,7 +161,7 @@ class GameScene extends Scene
         if(oldCoordinates.toKey() == currentCoordinates.toKey()) {
             return false;
         }
-        if(!map.exists(oldCoordinates.toKey()) || !map.exists(currentCoordinates.toKey())) {
+        if(!isInBounds(oldCoordinates) || !isInBounds(currentCoordinates)) {
             return false;
         }
         if(map[oldCoordinates.toKey()].id == map[currentCoordinates.toKey()].id) {
@@ -194,6 +195,7 @@ class GameScene extends Scene
     }
 
     override public function update() {
+        debug();
         var oldCoordinates:MapCoordinates = {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY};
         currentCoordinates = getCurrentCoordinates();
         if(isTransition(oldCoordinates)) {
@@ -220,8 +222,10 @@ class GameScene extends Scene
         );
         var cameraTargetY = player.centerY - HXP.height / 2;
         camera.y = getCameraTarget().y;
-        camera.x = MathUtil.clamp(camera.x, currentSegment.x, currentSegment.x + currentSegment.width - Segment.MIN_WIDTH);
-        camera.y = MathUtil.clamp(camera.y, currentSegment.y, currentSegment.y + currentSegment.height - Segment.MIN_HEIGHT);
+        if(isInBounds(currentCoordinates)) {
+            camera.x = MathUtil.clamp(camera.x, currentSegment.x, currentSegment.x + currentSegment.width - Segment.MIN_WIDTH);
+            camera.y = MathUtil.clamp(camera.y, currentSegment.y, currentSegment.y + currentSegment.height - Segment.MIN_HEIGHT);
+        }
     }
 
     private function getCameraTarget() {
@@ -236,6 +240,51 @@ class GameScene extends Scene
         }
         else {
             return new Vector2(cameraBoundLeft, player.centerY - HXP.height / 2);
+        }
+    }
+
+    private function isInBounds(checkCoordinates:MapCoordinates) {
+        return map.exists(checkCoordinates.toKey());
+    }
+
+    private function debug() {
+        var roomName = isInBounds(currentCoordinates) ? map[currentCoordinates.toKey()].name : "OUT OF BOUNDS";
+        ui.roomInfo.text = '[${currentCoordinates.mapX}, ${currentCoordinates.mapY}: ${roomName}]';
+        if(Key.check(Key.DIGIT_0)) {
+            if(Key.pressed(Key.A)) {
+                player.x = (currentCoordinates.mapX - 1 + 0.5) * Segment.MIN_WIDTH;
+                player.y = (currentCoordinates.mapY + 0.5) * Segment.MIN_HEIGHT;
+            }
+            else if(Key.pressed(Key.D)) {
+                player.x = (currentCoordinates.mapX + 1 + 0.5) * Segment.MIN_WIDTH;
+                player.y = (currentCoordinates.mapY + 0.5) * Segment.MIN_HEIGHT;
+            }
+            else if(Key.pressed(Key.W)) {
+                player.x = (currentCoordinates.mapX + 0.5) * Segment.MIN_WIDTH;
+                player.y = (currentCoordinates.mapY - 1 + 0.5) * Segment.MIN_HEIGHT;
+            }
+            else if(Key.pressed(Key.S)) {
+                player.x = (currentCoordinates.mapX + 0.5) * Segment.MIN_WIDTH;
+                player.y = (currentCoordinates.mapY + 1 + 0.5) * Segment.MIN_HEIGHT;
+            }
+        }
+        if(Key.check(Key.DIGIT_9)) {
+            player.active = false;
+            if(Key.check(Key.A)) {
+                player.x -= DEBUG_MOVE_SPEED * HXP.elapsed;
+            }
+            if(Key.check(Key.D)) {
+                player.x += DEBUG_MOVE_SPEED * HXP.elapsed;
+            }
+            if(Key.check(Key.W)) {
+                player.y -= DEBUG_MOVE_SPEED * HXP.elapsed;
+            }
+            if(Key.check(Key.S)) {
+                player.y += DEBUG_MOVE_SPEED * HXP.elapsed;
+            }
+        }
+        else {
+            player.active = true;
         }
     }
 }

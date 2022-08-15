@@ -27,12 +27,17 @@ class Player extends Entity
     public static inline var FLIGHT_ACCEL = 1000;
     public static inline var MAX_FLIGHT_SPEED = 250;
 
-    public static inline var SHOT_COOLDOWN = 0.25;
+    public static inline var SHOT_COOLDOWN = 0.2;
     public static inline var SHOT_BUFFER = 5;
+
+    public static inline var FUEL_CONSUMPTION_RATE = 1;
+    public static inline var FUEL_RECHARGE_RATE = 0.5;
+    public static inline var FUEL_RECHARGE_DELAY = 1;
 
     public var sprite(default, null):Spritemap;
     public var prevFacing(default, null):Bool;
     public var health(default, null):Int;
+    public var fuel(default, null):Float;
 
     private var velocity:Vector2;
     private var jumpDirectionBuffer:Alarm;
@@ -43,9 +48,11 @@ class Player extends Entity
     private var isFlying:Bool;
 
     private var shotCooldown:Alarm;
+    private var fuelRechargeDelay:Alarm;
 
     public function new(x:Float, y:Float) {
         super(x, y);
+        layer = -5;
         name = "player";
         mask = new Hitbox(12, 24);
         sprite = new Spritemap("graphics/player.png", 16, 32);
@@ -67,11 +74,14 @@ class Player extends Entity
         isFlying = false;
         shotCooldown = new Alarm(SHOT_COOLDOWN);
         addTween(shotCooldown);
+        fuelRechargeDelay = new Alarm(FUEL_RECHARGE_DELAY);
+        addTween(fuelRechargeDelay);
         health = 3;
+        fuel = 100;
     }
 
     override public function update() {
-        isFlying = Input.check("fly") && !isClimbing;
+        isFlying = Input.check("fly") && !isClimbing && fuel > 0;
 
         var vine = collide("vine", x, y);
         if(isClimbing) {
@@ -92,11 +102,21 @@ class Player extends Entity
         if(!isClimbing) {
             if(isFlying) {
                 flightMovement();
+                fuel -= FUEL_CONSUMPTION_RATE;
+                fuelRechargeDelay.start();
+                if(fuel <= 0) {
+                    isFlying = false;
+                }
             }
             else {
                 movement();
             }
         }
+
+        if(!fuelRechargeDelay.active) {
+            fuel = Math.min(fuel + FUEL_RECHARGE_RATE, 100);
+        }
+
         moveBy(
             velocity.x * HXP.elapsed,
             velocity.y * HXP.elapsed,
