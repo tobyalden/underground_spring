@@ -58,8 +58,8 @@ class GameScene extends Scene
 
     override public function begin() {
         Data.load(Main.SAVE_FILE_NAME);
-        loadMap();
         ui = add(new UI());
+        loadMap();
         lerpTimerX = 0;
         cameraStartX = getCameraTarget().x;
         cameraTargetX = getCameraTarget().x;
@@ -144,11 +144,13 @@ class GameScene extends Scene
             currentCoordinates = {mapX: savedCoordinates.mapX, mapY: savedCoordinates.mapY};
             loadSegment(currentCoordinates);
             player = add(new Player(savedPosition.x, savedPosition.y));
+            ui.showDebugMessage("PLAYER LOCATION LOADED");
         }
         else {
             currentCoordinates = startCoordinates;
             loadSegment(currentCoordinates);
             player = add(new Player(currentSegment.playerStart.x, currentSegment.playerStart.y));
+            ui.showDebugMessage("GAME START");
         }
     }
 
@@ -214,13 +216,17 @@ class GameScene extends Scene
             var exit = getSegmentExit(oldCoordinates);
             if(exit != null) {
                 player.moveTo(exit.centerX - player.width / 2, exit.centerY - player.height / 2);
-                Data.write("playerCoordinates", {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY});
-                Data.write("playerPosition", {x: player.x, y: player.y});
-                Data.save(Main.SAVE_FILE_NAME);
+                savePlayerLocation();
             }
         }
         super.update();
         updateCamera();
+    }
+
+    private function savePlayerLocation() {
+        Data.write("playerCoordinates", {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY});
+        Data.write("playerPosition", {x: player.x, y: player.y});
+        Data.save(Main.SAVE_FILE_NAME);
     }
 
     private function updateCamera() {
@@ -309,6 +315,13 @@ class GameScene extends Scene
         if(Key.check(Key.TILDE)) {
             if(Key.pressed(Key.R)) {
                 Data.clear();
+                HXP.scene = new GameScene();
+            }
+            if(Key.pressed(Key.S)) {
+                savePlayerLocation();
+                ui.showDebugMessage("PLAYER LOCATION SAVED");
+            }
+            if(Key.pressed(Key.L)) {
                 HXP.scene = new GameScene();
             }
         }

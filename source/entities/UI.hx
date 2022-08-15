@@ -6,10 +6,14 @@ import haxepunk.graphics.text.*;
 import haxepunk.graphics.tile.*;
 import haxepunk.masks.*;
 import haxepunk.math.*;
+import haxepunk.Tween;
+import haxepunk.tweens.misc.*;
 
 class UI extends Entity
 {
     public var roomInfo:Text;
+    public var debugMessage:Text;
+    public var debugMessageTimer:Alarm;
     private var hearts:Graphiclist;
     private var fuel:Image;
 
@@ -32,10 +36,22 @@ class UI extends Entity
         roomInfo = new Text("debug", {size: 24, color: 0x00FF00});
         roomInfo.y = HXP.height - roomInfo.height;
 
-        var allSprites = new Graphiclist([hearts, fuel, roomInfo]);
+        debugMessage = new Text("DEBUG MODE", {size: 24, color: 0x00FF00});
+        debugMessage.y = roomInfo.y - debugMessage.height;
+        debugMessageTimer = new Alarm(1, function() {
+            debugMessage.text = "";
+        });
+        addTween(debugMessageTimer, true);
+
+        var allSprites = new Graphiclist([hearts, fuel, roomInfo, debugMessage]);
         graphic = allSprites;
         graphic.scrollX = 0;
         graphic.scrollY = 0;
+    }
+
+    public function showDebugMessage(message:String) {
+        debugMessage.text = message;
+        debugMessageTimer.start();
     }
 
     override public function update() {
