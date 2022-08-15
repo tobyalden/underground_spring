@@ -212,10 +212,12 @@ class GameScene extends Scene
         if(isTransition(oldCoordinates)) {
             loadSegment(currentCoordinates);
             var exit = getSegmentExit(oldCoordinates);
-            player.moveTo(exit.centerX - player.width / 2, exit.centerY - player.height / 2);
-            Data.write("playerCoordinates", {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY});
-            Data.write("playerPosition", {x: player.x, y: player.y});
-            Data.save(Main.SAVE_FILE_NAME);
+            if(exit != null) {
+                player.moveTo(exit.centerX - player.width / 2, exit.centerY - player.height / 2);
+                Data.write("playerCoordinates", {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY});
+                Data.write("playerPosition", {x: player.x, y: player.y});
+                Data.save(Main.SAVE_FILE_NAME);
+            }
         }
         super.update();
         updateCamera();
@@ -265,6 +267,8 @@ class GameScene extends Scene
         var roomName = isInBounds(currentCoordinates) ? map[currentCoordinates.toKey()].name : "OUT OF BOUNDS";
         ui.roomInfo.text = '[${currentCoordinates.mapX}, ${currentCoordinates.mapY}: ${roomName}]';
 
+        player.active = !(Key.check(Key.DIGIT_0) || Key.check(Key.DIGIT_9));
+
         // Debug movement (screen by screen)
         if(Key.check(Key.DIGIT_0)) {
             if(Key.pressed(Key.A)) {
@@ -287,7 +291,6 @@ class GameScene extends Scene
 
         // Debug movement (smooth)
         if(Key.check(Key.DIGIT_9)) {
-            player.active = false;
             if(Key.check(Key.A)) {
                 player.x -= DEBUG_MOVE_SPEED * HXP.elapsed;
             }
@@ -300,9 +303,6 @@ class GameScene extends Scene
             if(Key.check(Key.S)) {
                 player.y += DEBUG_MOVE_SPEED * HXP.elapsed;
             }
-        }
-        else {
-            player.active = true;
         }
 
         // Resetting

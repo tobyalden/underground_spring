@@ -67,7 +67,7 @@ class Segment extends Entity
     }
 
     public function getExitById(exitId:Int) {
-        return exits[exitId];
+        return exits.exists(exitId) ? exits[exitId] : null;
     }
 
     public function offset(segmentX:Int, segmentY:Int) {
