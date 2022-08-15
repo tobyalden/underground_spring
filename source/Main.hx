@@ -10,6 +10,8 @@ import scenes.*;
 
 class Main extends Engine
 {
+    public static inline var SAVE_FILE_NAME = "underground_spring_save_file";
+
     private static var inputBuffer:Map<String, Array<Bool>>;
 
     static function main() {
@@ -22,6 +24,7 @@ class Main extends Engine
         HXP.fullscreen = true;
         //Lib.application.window.resize(HXP.width * 2, HXP.height * 2);
 #end
+
         Key.define("up", [Key.W, Key.UP]);
         Key.define("down", [Key.S, Key.DOWN]);
         Key.define("left", [Key.A, Key.LEFT, Key.LEFT_SQUARE_BRACKET]);

@@ -27,7 +27,7 @@ class Player extends Entity
     public static inline var FLIGHT_ACCEL = 1000;
     public static inline var MAX_FLIGHT_SPEED = 250;
 
-    public static inline var SHOT_COOLDOWN = 0.2;
+    public static inline var SHOT_COOLDOWN = 0.25;
     public static inline var SHOT_BUFFER = 5;
 
     public static inline var FUEL_CONSUMPTION_RATE = 1;

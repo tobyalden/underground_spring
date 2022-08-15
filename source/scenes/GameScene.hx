@@ -57,6 +57,7 @@ class GameScene extends Scene
     private var ui:UI;
 
     override public function begin() {
+        Data.load(Main.SAVE_FILE_NAME);
         loadMap();
         ui = add(new UI());
         lerpTimerX = 0;
@@ -70,6 +71,7 @@ class GameScene extends Scene
         // Load segments into map
         var xml = new haxe.xml.Access(Xml.parse(Assets.getText('maps/map.oel')));
         var id = 0;
+        var startCoordinates:MapCoordinates = {mapX: 0, mapY: 0};
         for(segment in xml.node.level.node.segments.nodes.segment) {
             var mapX = Std.int(Std.parseInt(segment.att.x) / MAP_TILE_SIZE);
             var mapY = Std.int(Std.parseInt(segment.att.y) / MAP_TILE_SIZE);
@@ -127,19 +129,26 @@ class GameScene extends Scene
                 }
             }
 
+
             // Load start
             if(segment.att.name == "start") {
-                var start = new Segment("start");
-                start.offset(mapX, mapY);
-                for(entity in start.entities) {
-                    add(entity);
-                }
-                player = add(new Player(start.playerStart.x, start.playerStart.y));
-                currentSegment = add(start);
-                currentCoordinates = {mapX: mapX, mapY: mapY};
+                startCoordinates = {mapX: mapX, mapY: mapY};
             }
 
             id++;
+        }
+
+        var savedCoordinates = Data.read("playerCoordinates");
+        var savedPosition = Data.read("playerPosition");
+        if(savedCoordinates != null && savedPosition != null) {
+            currentCoordinates = {mapX: savedCoordinates.mapX, mapY: savedCoordinates.mapY};
+            loadSegment(currentCoordinates);
+            player = add(new Player(savedPosition.x, savedPosition.y));
+        }
+        else {
+            currentCoordinates = startCoordinates;
+            loadSegment(currentCoordinates);
+            player = add(new Player(currentSegment.playerStart.x, currentSegment.playerStart.y));
         }
     }
 
@@ -147,10 +156,12 @@ class GameScene extends Scene
         var identifier = map[coordinates.toKey()];
         var segment = new Segment(identifier.name);
         segment.offset(identifier.origin.mapX, identifier.origin.mapY);
-        for(entity in currentSegment.entities) {
-            remove(entity);
+        if(currentSegment != null) {
+            for(entity in currentSegment.entities) {
+                remove(entity);
+            }
+            remove(currentSegment);
         }
-        remove(currentSegment);
         currentSegment = add(segment);
         for(entity in currentSegment.entities) {
             add(entity);
@@ -202,6 +213,9 @@ class GameScene extends Scene
             loadSegment(currentCoordinates);
             var exit = getSegmentExit(oldCoordinates);
             player.moveTo(exit.centerX - player.width / 2, exit.centerY - player.height / 2);
+            Data.write("playerCoordinates", {mapX: currentCoordinates.mapX, mapY: currentCoordinates.mapY});
+            Data.write("playerPosition", {x: player.x, y: player.y});
+            Data.save(Main.SAVE_FILE_NAME);
         }
         super.update();
         updateCamera();
@@ -250,6 +264,8 @@ class GameScene extends Scene
     private function debug() {
         var roomName = isInBounds(currentCoordinates) ? map[currentCoordinates.toKey()].name : "OUT OF BOUNDS";
         ui.roomInfo.text = '[${currentCoordinates.mapX}, ${currentCoordinates.mapY}: ${roomName}]';
+
+        // Debug movement (screen by screen)
         if(Key.check(Key.DIGIT_0)) {
             if(Key.pressed(Key.A)) {
                 player.x = (currentCoordinates.mapX - 1 + 0.5) * Segment.MIN_WIDTH;
@@ -268,6 +284,8 @@ class GameScene extends Scene
                 player.y = (currentCoordinates.mapY + 1 + 0.5) * Segment.MIN_HEIGHT;
             }
         }
+
+        // Debug movement (smooth)
         if(Key.check(Key.DIGIT_9)) {
             player.active = false;
             if(Key.check(Key.A)) {
@@ -285,6 +303,14 @@ class GameScene extends Scene
         }
         else {
             player.active = true;
+        }
+
+        // Resetting
+        if(Key.check(Key.TILDE)) {
+            if(Key.pressed(Key.R)) {
+                Data.clear();
+                HXP.scene = new GameScene();
+            }
         }
     }
 }
