@@ -31,8 +31,10 @@ class Player extends Entity
     public static inline var FUEL_RECHARGE_RATE = 0.5;
     public static inline var FUEL_RECHARGE_DELAY = 1;
 
+    public static inline var MAX_NAILS = 50;
     public static inline var SCATTER_COOLDOWN = 0.5;
     public static inline var SCATTER_COUNT = 8;
+    public static inline var MAX_TAP_LENGTH = 8;
     public static inline var RAPID_COOLDOWN = SCATTER_COOLDOWN / SCATTER_COUNT;
 
     public var nails(default, null):Array<Nail>;
@@ -60,7 +62,7 @@ class Player extends Entity
         super(x, y);
         layer = -5;
         name = "player";
-        nails = [for (i in 0...50) new Nail()];
+        nails = [for (i in 0...MAX_NAILS) new Nail()];
         mask = new Hitbox(12, 24);
         sprite = new Spritemap("graphics/player.png", 16, 32);
         sprite.x = -2;
@@ -260,34 +262,48 @@ class Player extends Entity
 
     }
 
+    private function getAvailableNailCount() {
+        var count = 0;
+        for(nail in nails) {
+            if(!nail.hasFired) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private function combat() {
         if(
-            Main.tapped("shoot", 5)
+            Main.tapped("shoot", MAX_TAP_LENGTH)
             && scatterCooldown.active
-            && scatterCooldown.percent > 0.5
+            && scatterCooldown.percent > 0.75
         ) {
             shotBuffered = true;
         }
-        if(
-            (Main.tapped("shoot", 5) || shotBuffered)
-            && !scatterCooldown.active
-        )
-         {
-            // Scatter shot
-            var angle = Math.PI / 6;
-            var shotCount = SCATTER_COUNT;
-            for(i in 0...shotCount) {
-                var angle = (
-                    (sprite.flipX ? -Math.PI: 0)
-                    + i * (angle / (shotCount - 1))
-                    - angle / 2
+        if(Main.tapped("shoot", MAX_TAP_LENGTH) || shotBuffered) {
+            var availableNailCount = getAvailableNailCount();
+            if(!scatterCooldown.active)
+             {
+                // Scatter shot
+                var spreadAngle = Math.PI / 6;
+                var shotCount = MathUtil.imin(
+                    availableNailCount, SCATTER_COUNT
                 );
-                fireNail(500, angle);
+                for(i in 0...shotCount) {
+                    var angle = sprite.flipX ? -Math.PI: 0;
+                    if(availableNailCount > 1) {
+                        angle += i * (spreadAngle / (shotCount - 1)) - spreadAngle / 2;
+                    }
+                    fireNail(500, angle);
+                }
+                scatterCooldown.start();
+                shotBuffered = false;
             }
-            scatterCooldown.start();
-            shotBuffered = false;
         }
-        if(Main.held("shoot", 6) && !rapidCooldown.active) {
+        else if(
+            Main.held("shoot", MAX_TAP_LENGTH + 1)
+            && !rapidCooldown.active
+        ) {
             // Rapid fire
             var angle = sprite.flipX ? -Math.PI: 0;
             fireNail(500, angle);
