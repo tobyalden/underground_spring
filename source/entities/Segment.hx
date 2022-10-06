@@ -64,6 +64,10 @@ class Segment extends Entity
             var vine = new Vine(Std.parseInt(vine.att.x) + 4, Std.parseInt(vine.att.y), Std.parseInt(vine.att.height));
             entities.push(vine);
         }
+        for(chaser in xml.node.level.node.entities.nodes.chaser) {
+            var chaser = new Chaser(Std.parseInt(chaser.att.x), Std.parseInt(chaser.att.y));
+            entities.push(chaser);
+        }
     }
 
     public function getExitById(exitId:Int) {
