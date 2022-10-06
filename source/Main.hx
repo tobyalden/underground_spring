@@ -11,8 +11,38 @@ import scenes.*;
 class Main extends Engine
 {
     public static inline var SAVE_FILE_NAME = "underground_spring_save_file";
+    public static inline var INPUT_BUFFER_SIZE = 10;
 
     private static var inputBuffer:Map<String, Array<Bool>>;
+    private static var timeHeld:Map<String, Float>;
+
+    public static var globalSfx:Map<String, Sfx>;
+
+    static public function held(input:String, duration:Int) {
+        var wasHeld = true;
+        for(i in 0...duration) {
+            if(!inputBuffer[input][i]) {
+                wasHeld = false;
+                break;
+            }
+        }
+        return Input.check(input) && wasHeld;
+    }
+
+    static public function getTimeHeld(input:String) {
+        return timeHeld[input];
+    }
+
+    static public function tapped(input:String, buffer:Int) {
+        var wasTap = false;
+        for(i in 1...(buffer + 2)) {
+            if(!inputBuffer[input][i]) {
+                wasTap = true;
+                break;
+            }
+        }
+        return Input.released(input) && inputBuffer[input][0] == true && wasTap;
+    }
 
     static function main() {
         new Main();
@@ -31,12 +61,24 @@ class Main extends Engine
         Key.define("right", [Key.D, Key.RIGHT, Key.RIGHT_SQUARE_BRACKET]);
         Key.define("jump", [Key.Z]);
         Key.define("fly", [Key.C]);
+        Key.define("collect", [Key.V]);
         Key.define("shoot", [Key.X]);
 
         inputBuffer = [
-            "jump" => [for (i in 0...10) false],
-            "shoot" => [for (i in 0...10) false],
-            "fly" => [for (i in 0...10) false],
+            "shoot" => [for (i in 0...INPUT_BUFFER_SIZE) false],
+        ];
+        timeHeld = [
+            "collect" => 0,
+        ];
+
+        globalSfx = [
+            "shoot" => new Sfx("audio/shoot.wav")
+            //"shoot1" => new Sfx("audio/shoot1.wav"),
+            //"shoot2" => new Sfx("audio/shoot2.wav"),
+            //"shoot3" => new Sfx("audio/shoot3.wav"),
+            //"shoot4" => new Sfx("audio/shoot4.wav"),
+            //"shoot5" => new Sfx("audio/shoot5.wav"),
+            //"shoot6" => new Sfx("audio/shoot6.wav")
         ];
 
         if(Gamepad.gamepad(0) != null) {
@@ -61,19 +103,6 @@ class Main extends Engine
         gamepad.defineAxis("right", XboxGamepad.LEFT_ANALOGUE_X, 0.5, 1);
     }
 
-    static public function inputPressedBuffer(input:String, frames:Int) {
-        if(Input.pressed(input)) {
-            return true;
-        }
-        for(i in 0...frames) {
-            if(inputBuffer[input][i]) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
     override public function update() {
 #if desktop
         if(Key.pressed(Key.ESCAPE)) {
@@ -83,8 +112,16 @@ class Main extends Engine
         super.update();
 
         for(input in inputBuffer.keys()) {
-            inputBuffer[input].insert(0, Input.pressed(input));
+            inputBuffer[input].insert(0, Input.check(input));
             inputBuffer[input].pop();
+        }
+        for(input in timeHeld.keys()) {
+            if(Input.check(input)) {
+                timeHeld[input] += HXP.elapsed;
+            }
+            else {
+                timeHeld[input] = 0;
+            }
         }
     }
 }

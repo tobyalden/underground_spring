@@ -28,7 +28,7 @@ class UI extends Entity
         }
         hearts.x = 10;
         hearts.y = 10;
-        
+
         fuel = new Image("graphics/fuel.png");
         fuel.x = hearts.x;
         fuel.y = hearts.y + cast(hearts.get(0), Image).height + 6;
