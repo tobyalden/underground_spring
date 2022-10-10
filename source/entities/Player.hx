@@ -35,7 +35,15 @@ class Player extends Entity
     public static inline var SCATTER_COOLDOWN = 0.5;
     public static inline var SCATTER_COUNT = 8;
     public static inline var MAX_TAP_LENGTH = 8;
-    public static inline var RAPID_COOLDOWN = SCATTER_COOLDOWN / SCATTER_COUNT;
+    public static inline var RAPID_COOLDOWN = (
+        SCATTER_COOLDOWN / SCATTER_COUNT
+    );
+
+    public static inline var KNOCKBACK_DURATION = 0.25;
+    public static inline var KNOCKBACK_POWER_X = 150;
+    public static inline var KNOCKBACK_POWER_Y = 150;
+    public static inline var INVINCIBLE_DURATION = 1;
+    public static inline var FLICKER_SPEED = 1 / 60 * 3;
 
     public var nails(default, null):Array<Nail>;
     public var sprite(default, null):Spritemap;
@@ -57,6 +65,10 @@ class Player extends Entity
     private var scatterCooldown:Alarm;
     private var shotBuffered:Bool;
     private var age:Float;
+
+    private var knockbackTimer:Alarm;
+    private var invincibleTimer:Alarm;
+    private var flickerTimer:Alarm;
 
     public function new(x:Float, y:Float) {
         super(x, y);
@@ -91,6 +103,12 @@ class Player extends Entity
         age = 0;
         health = 3;
         fuel = 100;
+        knockbackTimer = new Alarm(KNOCKBACK_DURATION);
+        addTween(knockbackTimer);
+        invincibleTimer = new Alarm(INVINCIBLE_DURATION);
+        addTween(invincibleTimer);
+        flickerTimer = new Alarm(FLICKER_SPEED, TweenType.PingPong);
+        addTween(flickerTimer, true);
     }
 
     override public function update() {
@@ -122,7 +140,16 @@ class Player extends Entity
                 }
             }
             else {
-                movement();
+                // Apply gravity
+                var gravity:Float = GRAVITY;
+                if(Math.abs(velocity.y) < JUMP_CANCEL) {
+                    gravity *= 0.5;
+                }
+                velocity.y += gravity * HXP.elapsed;
+
+                if(!knockbackTimer.active) {
+                    movement();
+                }
             }
         }
 
@@ -248,11 +275,6 @@ class Player extends Entity
             }
         }
         else {
-            var gravity:Float = GRAVITY;
-            if(Math.abs(velocity.y) < JUMP_CANCEL) {
-                gravity *= 0.5;
-            }
-            velocity.y += gravity * HXP.elapsed;
             if(Input.released("jump") && velocity.y < -JUMP_CANCEL) {
                 velocity.y = -JUMP_CANCEL;
             }
@@ -333,6 +355,19 @@ class Player extends Entity
                 nail.collect();
             }
         }
+
+        if(!invincibleTimer.active) {
+            var enemy = collide("enemy", x, y);
+            if(enemy != null) {
+                knockbackTimer.start();
+                velocity.x = (
+                    KNOCKBACK_POWER_X
+                    * (centerX < enemy.centerX ? -1 : 1)
+                );
+                velocity.y = -KNOCKBACK_POWER_Y;
+                invincibleTimer.start();
+            }
+        }
     }
 
     override public function moveCollideX(e:Entity) {
@@ -360,6 +395,13 @@ class Player extends Entity
     }
 
     private function animation() {
+        if(invincibleTimer.active) {
+            visible = flickerTimer.forward;
+        }
+        else {
+            visible = true;
+        }
+
         prevFacing = sprite.flipX;
         if(Input.check("left")) {
             sprite.flipX = true;
@@ -389,3 +431,4 @@ class Player extends Entity
         }
     }
 }
+

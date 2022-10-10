@@ -72,7 +72,7 @@ class Main extends Engine
         ];
 
         globalSfx = [
-            "shoot" => new Sfx("audio/shoot.wav")
+            //"shoot" => new Sfx("audio/shoot.wav")
             //"shoot1" => new Sfx("audio/shoot1.wav"),
             //"shoot2" => new Sfx("audio/shoot2.wav"),
             //"shoot3" => new Sfx("audio/shoot3.wav"),
