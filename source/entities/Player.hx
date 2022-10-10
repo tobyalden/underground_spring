@@ -70,6 +70,8 @@ class Player extends Entity
     private var invincibleTimer:Alarm;
     private var flickerTimer:Alarm;
 
+    private var isDead:Bool;
+
     public function new(x:Float, y:Float) {
         super(x, y);
         layer = -5;
@@ -109,9 +111,15 @@ class Player extends Entity
         addTween(invincibleTimer);
         flickerTimer = new Alarm(FLICKER_SPEED, TweenType.PingPong);
         addTween(flickerTimer, true);
+
+        isDead = false;
     }
 
     override public function update() {
+        if(isDead) {
+            return;
+        }
+
         isFlying = Input.check("fly") && !isClimbing && fuel > 0;
 
         var vine = collide("vine", x, y);
@@ -154,7 +162,6 @@ class Player extends Entity
         }
 
         combat();
-        collisions();
 
         if(!fuelRechargeDelay.active) {
             fuel = Math.min(fuel + FUEL_RECHARGE_RATE, 100);
@@ -185,6 +192,9 @@ class Player extends Entity
             nailCount++;
         }
         age += HXP.elapsed;
+
+        collisions();
+
         super.update();
     }
 
@@ -359,15 +369,72 @@ class Player extends Entity
         if(!invincibleTimer.active) {
             var enemy = collide("enemy", x, y);
             if(enemy != null) {
-                knockbackTimer.start();
-                velocity.x = (
-                    KNOCKBACK_POWER_X
-                    * (centerX < enemy.centerX ? -1 : 1)
-                );
-                velocity.y = -KNOCKBACK_POWER_Y;
-                invincibleTimer.start();
+                takeHit(enemy);
             }
         }
+    }
+
+    private function takeHit(source:Entity) {
+        health -= 1;
+        if(health <= 0) {
+            die();
+        }
+        else {
+            knockbackTimer.start();
+            velocity.x = (
+                KNOCKBACK_POWER_X
+                * (centerX < source.centerX ? -1 : 1)
+            );
+            velocity.y = -KNOCKBACK_POWER_Y;
+            invincibleTimer.start();
+        }
+    }
+
+    private function die() {
+        isDead = true;
+        visible = false;
+        collidable = false;
+        explode();
+        for(nail in nails) {
+            if(!nail.hasFired) {
+                nail.fire(
+                    new Vector2(centerX - 4, centerY - 2),
+                    500,
+                    Math.PI * 2 * Math.random()
+                );
+            }
+        }
+        cast(HXP.scene, GameScene).onDeath();
+    }
+
+    private function explode() {
+        var numExplosions = 50;
+        var directions = new Array<Vector2>();
+        for(i in 0...numExplosions) {
+            var angle = (2 / numExplosions) * i;
+            directions.push(new Vector2(Math.cos(angle), Math.sin(angle)));
+            directions.push(new Vector2(-Math.cos(angle), Math.sin(angle)));
+            directions.push(new Vector2(Math.cos(angle), -Math.sin(angle)));
+            directions.push(new Vector2(-Math.cos(angle), -Math.sin(angle)));
+        }
+        var count = 0;
+        for(direction in directions) {
+            direction.scale(0.8 * Math.random());
+            direction.normalize(
+                Math.max(0.1 + 0.2 * Math.random(), direction.length)
+            );
+            var explosion = new Particle(
+                centerX, centerY, directions[count], 1, 1
+            );
+            explosion.layer = -99;
+            HXP.scene.add(explosion);
+            count++;
+        }
+
+#if desktop
+        Sys.sleep(0.02);
+#end
+        HXP.scene.camera.shake(1, 4);
     }
 
     override public function moveCollideX(e:Entity) {

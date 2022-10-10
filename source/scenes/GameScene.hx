@@ -55,10 +55,13 @@ class GameScene extends Scene
     private var currentCoordinates:MapCoordinates;
     private var map:Map<String, SegmentIdentifier>;
     private var ui:UI;
+    private var curtain:Curtain;
 
     override public function begin() {
         Data.load(Main.SAVE_FILE_NAME);
         ui = add(new UI());
+        curtain = add(new Curtain());
+        curtain.fadeOut(0.25);
         loadMap();
         lerpTimerX = 0;
         cameraStartX = getCameraTarget().x;
@@ -270,6 +273,15 @@ class GameScene extends Scene
 
     private function isInBounds(checkCoordinates:MapCoordinates) {
         return map.exists(checkCoordinates.toKey());
+    }
+
+    public function onDeath() {
+        HXP.alarm(2, function() {
+            curtain.fadeIn(0.25);
+            HXP.alarm(0.25, function() {
+                HXP.scene = new GameScene();
+            });
+        });
     }
 
     private function debug() {
