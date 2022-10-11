@@ -18,6 +18,8 @@ class Nail extends Entity
 
     public var hasFired(default, null):Bool;
     public var hasCollided(default, null):Bool;
+    public var hasLodged(default, null):Bool;
+    public var lodgePoint(default, null):Vector2;
     public var sprite:Image;
     private var velocity:Vector2;
     private var angle:Float;
@@ -39,6 +41,7 @@ class Nail extends Entity
         velocity = new Vector2();
         spinSpeed = 0;
         collect();
+        hasLodged = false;
     }
 
     public function fire(position:Vector2, speed:Float, angle:Float) {
@@ -48,7 +51,21 @@ class Nail extends Entity
         sprite.x = 1;
         sprite.y = 1;
         sprite.angle = angle * -180 / Math.PI;
+        layer = -10;
         hasFired = true;
+    }
+
+    public function dislodge(position:Vector2, speed:Float, angle:Float) {
+        moveTo(position.x, position.y);
+        this.speed = speed;
+        this.angle = angle;
+        velocity.x = Math.cos(angle);
+        velocity.y = Math.sin(angle);
+        velocity.normalize(speed);
+        sprite.angle = angle * -180 / Math.PI;
+        hasCollided = true;
+        hasLodged = false;
+        randomizeSpinSpeed();
     }
 
     public function collect() {
@@ -68,7 +85,9 @@ class Nail extends Entity
         else {
             sprite.alpha = 0.5;
         }
-        if(hasFired) {
+        if(hasLodged) {
+        }
+        else if(hasFired) {
             if(hasCollided) {
                 if(Input.check("collect")) {
                     var player = HXP.scene.getInstance("player");
@@ -127,13 +146,21 @@ class Nail extends Entity
         return true;
     }
 
-    public function onCollision() {
+    public function lodge(newLodgePoint:Vector2) {
         hasCollided = true;
+        hasLodged = true;
+        lodgePoint = newLodgePoint;
+    }
+
+    public function randomizeSpinSpeed() {
         spinSpeed = 10 + Math.random() * 20;
         if(velocity.x < 0) {
             spinSpeed = -spinSpeed;
         }
     }
+
+    public function onCollision() {
+        hasCollided = true;
+        randomizeSpinSpeed();
+    }
 }
-
-
