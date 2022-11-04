@@ -68,6 +68,10 @@ class Segment extends Entity
             var chaser = new Chaser(Std.parseInt(chaser.att.x), Std.parseInt(chaser.att.y));
             entities.push(chaser);
         }
+        for(boss in xml.node.level.node.entities.nodes.boss) {
+            var boss = new Boss(Std.parseInt(boss.att.x), Std.parseInt(boss.att.y));
+            entities.push(boss);
+        }
     }
 
     public function getExitById(exitId:Int) {

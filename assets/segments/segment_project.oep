@@ -16,7 +16,7 @@
     <Width>2400</Width>
     <Height>1800</Height>
   </LevelMaximumSize>
-  <Filename>C:\Users\Dell\Desktop\Coding\underground_spring\assets\segments\segment_project.oep</Filename>
+  <Filename>C:\Users\Owner\Desktop\Coding\underground_spring_fresh\assets\segments\segment_project.oep</Filename>
   <AngleMode>Radians</AngleMode>
   <CameraEnabled>false</CameraEnabled>
   <CameraSize>
@@ -117,6 +117,21 @@
       <Size>
         <Width>30</Width>
         <Height>30</Height>
+      </Size>
+      <Origin>
+        <X>0</X>
+        <Y>0</Y>
+      </Origin>
+      <ImageDefinition DrawMode="Rectangle" ImagePath="" Tiled="false">
+        <RectColor A="255" R="255" G="0" B="0" />
+      </ImageDefinition>
+      <ValueDefinitions />
+      <NodesDefinition Enabled="false" Limit="-1" DrawMode="None" Ghost="false" />
+    </EntityDefinition>
+    <EntityDefinition Name="boss" Limit="-1" ResizableX="false" ResizableY="false" Rotatable="false" RotateIncrement="15">
+      <Size>
+        <Width>40</Width>
+        <Height>60</Height>
       </Size>
       <Origin>
         <X>0</X>

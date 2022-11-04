@@ -9,7 +9,7 @@ import haxepunk.Tween;
 import haxepunk.tweens.misc.*;
 import scenes.*;
 
-class Chaser extends CombatEntity
+class Boss extends CombatEntity
 {
     private var velocity:Vector2;
     private var health:Int;
@@ -20,7 +20,7 @@ class Chaser extends CombatEntity
     public function new(x:Float, y:Float) {
         super(x, y);
         type = "enemy";
-        mask = new Hitbox(30, 30);
+        mask = new Hitbox(40, 60);
         graphic = new ColoredRect(width, height, 0xFF0000);
         velocity = new Vector2(150, 0);
         health = 8;
@@ -79,3 +79,4 @@ class Chaser extends CombatEntity
         return true;
     }
 }
+

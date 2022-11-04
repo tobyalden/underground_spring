@@ -3,5 +3,6 @@
     <segment id="0" x="20" y="10" width="20" height="10" name="start" />
     <segment id="1" x="10" y="10" width="10" height="20" name="left" />
     <segment id="2" x="20" y="20" width="20" height="20" name="big" />
+    <segment id="3" x="40" y="10" width="20" height="10" name="boss" />
   </segments>
 </level>
