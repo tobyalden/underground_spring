@@ -155,9 +155,6 @@ class GameScene extends Scene
             player = add(new Player(currentSegment.playerStart.x, currentSegment.playerStart.y));
             ui.showDebugMessage("GAME START");
         }
-        for(nail in player.nails) {
-            add(nail);
-        }
     }
 
     public function loadSegment(coordinates:MapCoordinates) {

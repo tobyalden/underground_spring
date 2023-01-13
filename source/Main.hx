@@ -71,9 +71,7 @@ class Main extends Engine
         inputBuffer = [
             "shoot" => [for (i in 0...INPUT_BUFFER_SIZE) false],
         ];
-        timeHeld = [
-            "collect" => 0,
-        ];
+        timeHeld = [];
 
         globalSfx = [
             //"shoot" => new Sfx("audio/shoot.wav")

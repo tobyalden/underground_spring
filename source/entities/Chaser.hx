@@ -13,7 +13,6 @@ class Chaser extends CombatEntity
 {
     private var velocity:Vector2;
     private var health:Int;
-    private var lodgedNails:Array<Nail>;
 
     public static inline var MAX_RUN_SPEED = 150;
 
@@ -24,7 +23,6 @@ class Chaser extends CombatEntity
         graphic = new ColoredRect(width, height, 0xFF0000);
         velocity = new Vector2(150, 0);
         health = 8;
-        lodgedNails = [];
     }
 
     override public function update() {
@@ -33,11 +31,6 @@ class Chaser extends CombatEntity
         for(_nail in nails) {
             var nail = cast(_nail, Nail);
             if(!nail.hasCollided) {
-                nail.lodge(new Vector2(
-                    nail.x - x,
-                    nail.y - y
-                ));
-                lodgedNails.push(nail);
                 takeHit();
             }
         }
@@ -46,12 +39,6 @@ class Chaser extends CombatEntity
             velocity.y * HXP.elapsed,
             ["walls"]
         );
-        for(nail in lodgedNails) {
-            nail.moveTo(
-                x + nail.lodgePoint.x,
-                y + nail.lodgePoint.y
-            );
-        }
         super.update();
     }
 
@@ -65,13 +52,6 @@ class Chaser extends CombatEntity
     private function die() {
         HXP.scene.remove(this);
         explode();
-        for(nail in lodgedNails) {
-            nail.dislodge(
-                new Vector2(centerX, centerY),
-                300,
-                Math.PI * 2 * Math.random()
-            );
-        }
     }
 
     override public function moveCollideX(e:Entity) {

@@ -45,7 +45,6 @@ class Player extends CombatEntity
     public static inline var INVINCIBLE_DURATION = 1;
     public static inline var FLICKER_SPEED = 1 / 60 * 3;
 
-    public var nails(default, null):Array<Nail>;
     public var sprite(default, null):Spritemap;
     public var prevFacing(default, null):Bool;
     public var health(default, null):Int;
@@ -76,7 +75,6 @@ class Player extends CombatEntity
         super(x, y);
         layer = -5;
         name = "player";
-        nails = [for (i in 0...MAX_NAILS) new Nail()];
         mask = new Hitbox(12, 24);
         sprite = new Spritemap("graphics/player.png", 16, 32);
         sprite.x = -2;
@@ -174,24 +172,6 @@ class Player extends CombatEntity
             ["walls"]
         );
         animation();
-        var nailCount = 0;
-        for(nail in nails) {
-            if(nail.hasFired) {
-                continue;
-            }
-            nail.moveTo(centerX, centerY);
-            var revolveSpeed = 2;
-            var nailSeparation = MathUtil.lerp(2, 0, nailCount / nails.length);
-            nail.sprite.x = Math.cos((age + nailSeparation) * revolveSpeed) * 20;
-            nail.sprite.y = Math.sin((age + nailSeparation) * 2 * revolveSpeed) * 10;
-            if(nail.sprite.x > 15) {
-                nail.layer = -10;
-            }
-            else if(nail.sprite.x < -15) {
-                nail.layer = 10;
-            }
-            nailCount++;
-        }
         age += HXP.elapsed;
 
         collisions();
@@ -295,16 +275,6 @@ class Player extends CombatEntity
 
     }
 
-    private function getAvailableNailCount() {
-        var count = 0;
-        for(nail in nails) {
-            if(!nail.hasFired) {
-                count++;
-            }
-        }
-        return count;
-    }
-
     private function combat() {
         if(
             Main.tapped("shoot", MAX_TAP_LENGTH)
@@ -314,19 +284,13 @@ class Player extends CombatEntity
             shotBuffered = true;
         }
         if(Main.tapped("shoot", MAX_TAP_LENGTH) || shotBuffered) {
-            var availableNailCount = getAvailableNailCount();
             if(!scatterCooldown.active)
              {
                 // Scatter shot
                 var spreadAngle = Math.PI / 6;
-                var shotCount = MathUtil.imin(
-                    availableNailCount, SCATTER_COUNT
-                );
-                for(i in 0...shotCount) {
+                for(i in 0...SCATTER_COUNT) {
                     var angle = sprite.flipX ? -Math.PI: 0;
-                    if(availableNailCount > 1) {
-                        angle += i * (spreadAngle / (shotCount - 1)) - spreadAngle / 2;
-                    }
+                    angle += i * (spreadAngle / (SCATTER_COUNT - 1)) - spreadAngle / 2;
                     fireNail(500, angle);
                 }
                 scatterCooldown.start();
@@ -345,28 +309,15 @@ class Player extends CombatEntity
     }
 
     private function fireNail(speed:Float, angle:Float) {
-        for(nail in nails) {
-            if(!nail.hasFired) {
-                nail.fire(
-                    new Vector2(centerX - 4, centerY - 2),
-                    speed,
-                    angle
-                );
-                break;
-            }
-        }
+        var nail = HXP.scene.add(new Nail());
+        nail.fire(
+            new Vector2(centerX - 4, centerY - 2),
+            speed,
+            angle
+        );
     }
 
     private function collisions() {
-        var nails = [];
-        collideInto("nail", x, y, nails);
-        for(_nail in nails) {
-            var nail = cast(_nail, Nail);
-            if(nail.hasFired && nail.hasCollided && !nail.hasLodged) {
-                nail.collect();
-            }
-        }
-
         if(!invincibleTimer.active) {
             var enemy = collide("enemy", x, y);
             if(enemy != null) {
@@ -396,15 +347,6 @@ class Player extends CombatEntity
         visible = false;
         collidable = false;
         explode();
-        for(nail in nails) {
-            if(!nail.hasFired) {
-                nail.fire(
-                    new Vector2(centerX - 4, centerY - 2),
-                    500,
-                    Math.PI * 2 * Math.random()
-                );
-            }
-        }
         cast(HXP.scene, GameScene).onDeath();
     }
 

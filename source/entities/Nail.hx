@@ -18,8 +18,6 @@ class Nail extends Entity
 
     public var hasFired(default, null):Bool;
     public var hasCollided(default, null):Bool;
-    public var hasLodged(default, null):Bool;
-    public var lodgePoint(default, null):Vector2;
     public var sprite:Image;
     private var velocity:Vector2;
     private var angle:Float;
@@ -40,8 +38,6 @@ class Nail extends Entity
         graphic = sprite;
         velocity = new Vector2();
         spinSpeed = 0;
-        collect();
-        hasLodged = false;
     }
 
     public function fire(position:Vector2, speed:Float, angle:Float) {
@@ -55,62 +51,14 @@ class Nail extends Entity
         hasFired = true;
     }
 
-    public function dislodge(position:Vector2, speed:Float, angle:Float) {
-        moveTo(position.x, position.y);
-        this.speed = speed;
-        this.angle = angle;
-        velocity.x = Math.cos(angle);
-        velocity.y = Math.sin(angle);
-        velocity.normalize(speed);
-        sprite.angle = angle * -180 / Math.PI;
-        hasCollided = true;
-        hasLodged = false;
-        randomizeSpinSpeed();
-    }
-
-    public function collect() {
-        hasFired = false;
-        hasCollided = false;
-        sprite.angle = -90;
-    }
-
     override public function update() {
         collidable = hasFired;
-        if(hasCollided) {
-            sprite.alpha = 0.75;
-        }
-        else if(hasFired) {
-            sprite.alpha = 1;
-        }
-        else {
-            sprite.alpha = 0.5;
-        }
-        if(hasLodged) {
-        }
-        else if(hasFired) {
+        if(hasFired) {
             if(hasCollided) {
-                if(Input.check("collect")) {
-                    var player = HXP.scene.getInstance("player");
-                    var towardsPlayer = new Vector2(
-                        player.centerX - centerX,
-                        player.centerY - centerY
-                    );
-                    var lerpFactor = (
-                        Math.min(Main.getTimeHeld("collect"), TIME_TO_MAX_COLLECT_SPEED)
-                        / TIME_TO_MAX_COLLECT_SPEED
-                    );
-                    towardsPlayer.normalize(MAX_COLLECT_SPEED * lerpFactor);
-                    velocity.x = MathUtil.lerp(
-                        velocity.x, towardsPlayer.x, lerpFactor
-                    );
-                    velocity.y = MathUtil.lerp(
-                        velocity.y, towardsPlayer.y, lerpFactor
-                    );
-                    sprite.angle = MathUtil.lerp(
-                        sprite.angle,
-                        MathUtil.angle(centerX, centerY, player.centerX, player.centerY),
-                        lerpFactor
-                    );
+                if(velocity.length < 10) {
+                    velocity.x = 0;
+                    velocity.y = 0;
+                    spinSpeed = 0;
                 }
                 else {
                     sprite.angle += spinSpeed;
@@ -128,28 +76,17 @@ class Nail extends Entity
     }
 
     override public function moveCollideX(_:Entity) {
-        velocity.x = -velocity.x / 4;
+        velocity.x = -velocity.x / (3 + Math.random());
         velocity.y = -40;
         onCollision();
         return true;
     }
 
     override public function moveCollideY(_:Entity) {
-        velocity.x = velocity.x / 2;
-        velocity.y = -velocity.y / 4;
+        velocity.x = velocity.x / (1 + Math.random());
+        velocity.y = -velocity.y / (3 + Math.random());
         onCollision();
-        if(velocity.length < 10) {
-            velocity.x = 0;
-            velocity.y = 0;
-            spinSpeed = 0;
-        }
         return true;
-    }
-
-    public function lodge(newLodgePoint:Vector2) {
-        hasCollided = true;
-        hasLodged = true;
-        lodgePoint = newLodgePoint;
     }
 
     public function randomizeSpinSpeed() {
@@ -160,6 +97,11 @@ class Nail extends Entity
     }
 
     public function onCollision() {
+        if(!hasCollided) {
+            HXP.tween(sprite, {"alpha": 0}, 3, {tweener: this, complete: function() {
+                HXP.scene.remove(this);
+            }});
+        }
         hasCollided = true;
         randomizeSpinSpeed();
     }
